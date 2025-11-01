@@ -1,0 +1,8 @@
+{
+  "globalSettings": {
+    "clearContext": true,
+    "gptTitleMatch": "ChatGPT"
+  },
+  "menus": [],
+  "version": 3
+}
