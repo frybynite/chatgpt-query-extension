@@ -52,6 +52,9 @@ test.describe('Context Menu Tests - Dynamic Updates', () => {
     const saveBtn = optionsPage.locator('#save');
     await saveBtn.click();
 
+    // Wait for save to complete and sidebar to update
+    await optionsPage.waitForSave();
+
     // Wait for the menu to appear in sidebar after save
     const newMenu = optionsPage.locator('.menu-item:has-text("New Context Menu")');
     await expect(newMenu).toBeVisible({ timeout: 10000 });
@@ -192,6 +195,9 @@ test.describe('Context Menu Tests - Dynamic Updates', () => {
     const saveBtn = optionsPage.locator('#save');
     await saveBtn.click();
 
+    // Wait for save to complete and sidebar to update
+    await optionsPage.waitForSave();
+
     // Wait for the menu to appear in sidebar with original name
     const menuItem = optionsPage.locator('.menu-item.selected .menu-name');
     await expect(menuItem).toContainText(originalName, { timeout: 5000 });
@@ -206,6 +212,9 @@ test.describe('Context Menu Tests - Dynamic Updates', () => {
 
     // Save again
     await saveBtn.click();
+
+    // Wait for save to complete and sidebar to update
+    await optionsPage.waitForSave();
 
     // Wait for sidebar to update with new name
     await expect(menuItem).toContainText(newName, { timeout: 5000 });
