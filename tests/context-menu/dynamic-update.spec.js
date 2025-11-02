@@ -146,12 +146,16 @@ test.describe('Context Menu Tests - Dynamic Updates', () => {
     const beforeCount = await actionItems.count();
     console.log(`Actions before deletion: ${beforeCount}`);
 
-    // Set up continuous dialog handler
-    optionsPage.on('dialog', dialog => dialog.accept());
-
-    // Delete the action
+    // Delete the action - this will show confirmation modal
     const deleteBtn = optionsPage.locator('.action-item .btn-delete').last();
     await deleteBtn.click();
+    await optionsPage.waitForTimeout(300);
+
+    // Wait for modal and confirm deletion
+    const modalOverlay = optionsPage.locator('#modal-overlay');
+    await expect(modalOverlay).toBeVisible();
+    const modalYesBtn = optionsPage.locator('#modal-ok');
+    await modalYesBtn.click();
     await optionsPage.waitForTimeout(500);
 
     // Verify action was removed from UI
@@ -339,12 +343,16 @@ test.describe('Context Menu Tests - Dynamic Updates', () => {
     await expect(menu).toBeVisible({ timeout: 5000 });
     console.log(`✓ Menu "${menuToDelete}" created`);
 
-    // Set up continuous dialog handler
-    optionsPage.on('dialog', dialog => dialog.accept());
-
-    // Delete the menu
+    // Delete the menu - this will show confirmation modal
     const deleteBtn = optionsPage.locator('#delete-menu');
     await deleteBtn.click();
+    await optionsPage.waitForTimeout(300);
+
+    // Wait for modal and confirm deletion
+    const modalOverlay = optionsPage.locator('#modal-overlay');
+    await expect(modalOverlay).toBeVisible();
+    const modalYesBtn = optionsPage.locator('#modal-ok');
+    await modalYesBtn.click();
     await optionsPage.waitForTimeout(500);
 
     // Verify menu was removed
