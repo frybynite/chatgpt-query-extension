@@ -520,12 +520,180 @@ function waitForTitleMatch(tabId, titleSubstring, timeoutMs = 20000) {
   });
 }
 
+// ====== MODAL OVERLAY FUNCTION (to be injected) ======
+function createModalOverlayFunction() {
+  return function showModalOverlay(message) {
+    // Remove any existing modal
+    const existingModal = document.getElementById('chatgpt-query-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'chatgpt-query-modal';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2147483647;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    `;
+
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    `;
+
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid #dadce0;
+    `;
+
+    const title = document.createElement('h3');
+    title.textContent = 'Notice';
+    title.style.cssText = `
+      margin: 0;
+      font-size: 18px;
+      font-weight: 500;
+      color: #202124;
+    `;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = `
+      background: none;
+      border: none;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      color: #5f6368;
+      opacity: 0.6;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background-color 0.2s, opacity 0.2s;
+    `;
+    closeBtn.onmouseover = () => {
+      closeBtn.style.backgroundColor = '#f1f3f4';
+      closeBtn.style.opacity = '1';
+    };
+    closeBtn.onmouseout = () => {
+      closeBtn.style.backgroundColor = 'transparent';
+      closeBtn.style.opacity = '0.6';
+    };
+
+    const body = document.createElement('div');
+    body.style.cssText = `
+      padding: 24px;
+    `;
+
+    const messageEl = document.createElement('p');
+    messageEl.textContent = message;
+    messageEl.style.cssText = `
+      margin: 0;
+      color: #5f6368;
+      line-height: 1.6;
+    `;
+
+    const footer = document.createElement('div');
+    footer.style.cssText = `
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 24px;
+      border-top: 1px solid #dadce0;
+    `;
+
+    const okBtn = document.createElement('button');
+    okBtn.textContent = 'OK';
+    okBtn.style.cssText = `
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      min-width: 80px;
+      transition: background-color 0.2s;
+    `;
+    okBtn.onmouseover = () => {
+      okBtn.style.backgroundColor = '#1557b0';
+    };
+    okBtn.onmouseout = () => {
+      okBtn.style.backgroundColor = '#1a73e8';
+    };
+
+    const closeModal = () => {
+      overlay.remove();
+      document.removeEventListener('keydown', handleEscape);
+    };
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    };
+
+    closeBtn.onclick = closeModal;
+    okBtn.onclick = closeModal;
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        closeModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+
+    // Assemble modal
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    body.appendChild(messageEl);
+    footer.appendChild(okBtn);
+    dialog.appendChild(header);
+    dialog.appendChild(body);
+    dialog.appendChild(footer);
+    overlay.appendChild(dialog);
+
+    // Add to page
+    document.body.appendChild(overlay);
+    okBtn.focus();
+  };
+}
+
 // ====== INJECTION (returns true if inserted/submitted, else false) ======
 async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = false, reqId = "" } = {}) {
   try {
+    const modalFnString = createModalOverlayFunction().toString();
     const results = await chrome.scripting.executeScript({
       target: { tabId },
-      func: (text, label, shouldSubmit, requestId) => {
+      func: (text, label, shouldSubmit, requestId, modalFnStr) => {
+        // Create modal function from string
+        const showModalOverlay = new Function('return ' + modalFnStr)();
+        
         console.log("[JobSearchExt]", label, "inject start (debounced)", { requestId, shouldSubmit });
 
         // ---- page-level debounce: if same reqId already handled in last 10s, skip ----
@@ -686,13 +854,13 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
             else if (++tries >= MAX_TRIES_LOCAL) {
               clearInterval(timer);
               console.warn("[JobSearchExt]", label, "editor not found — giving up");
-              alert("Could not auto-insert text. Please paste manually.");
+              showModalOverlay("Could not auto-insert text. Please paste manually.");
               resolve({ inserted: false, submitted: false, skipped: false });
             }
           }, INTERVAL);
         });
       },
-      args: [prompt, label, autoSubmit, reqId],
+      args: [prompt, label, autoSubmit, reqId, modalFnString],
       world: "MAIN" // ensure we're in the page's main world
     });
 
