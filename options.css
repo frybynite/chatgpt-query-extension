@@ -465,18 +465,21 @@ header .header-icon {
 }
 
 .btn-add-menu {
-  padding: 4px 8px;
+  padding: 0;
   background: #fff;
   color: #1a73e8;
   border: 1px solid #dadce0;
   border-radius: 4px;
   cursor: pointer;
-  font-family: inherit;
-  font-size: 18px;
-  font-weight: 400;
+  font-family: 'Arial', sans-serif;
+  font-size: 20px;
+  font-weight: 300;
   line-height: 1;
-  min-width: 28px;
-  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   transition: background-color 0.2s, border-color 0.2s;
   position: relative;
 }
