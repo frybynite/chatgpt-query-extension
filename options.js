@@ -41,8 +41,8 @@ let currentConfig = null;
 let selectedMenuId = null;
 let draggedElement = null;
 let draggedMenuElement = null;
-let savedFormState = null;  // Snapshot of form state to detect changes
-let isDirty = false;         // Flag indicating if current menu has unsaved changes
+let savedFormStates = new Map();  // Map of menuId -> saved form state for each menu
+let dirtyMenus = new Set();       // Set of menuIds with unsaved changes
 
 // ====== INITIALIZATION ======
 document.addEventListener('DOMContentLoaded', async () => {
@@ -101,8 +101,8 @@ function createMenuElement(menu) {
   menuItem.dataset.menuId = menu.id;
   menuItem.querySelector('.menu-name').textContent = menu.name;
 
-  // Add unsaved changes indicator if this menu is selected and has changes
-  if (menu.id === selectedMenuId && isDirty) {
+  // Add unsaved changes indicator if this menu has unsaved changes
+  if (dirtyMenus.has(menu.id)) {
     const indicator = document.createElement('span');
     indicator.className = 'menu-unsaved-indicator';
     menuItem.insertBefore(indicator, menuItem.querySelector('.menu-name'));
@@ -146,6 +146,11 @@ function updateMenuCount() {
 
 // ====== MENU SELECTION ======
 function selectMenu(menuId) {
+  // Save current form state to config before switching (if there was a previous selection)
+  if (selectedMenuId && selectedMenuId !== menuId) {
+    syncFormToConfig();
+  }
+
   selectedMenuId = menuId;
 
   // Update selected state in sidebar
@@ -194,13 +199,41 @@ function loadMenuDetails(menuId) {
   // Render actions for this menu
   renderActions(menu);
 
-  // Capture initial state for change detection
-  savedFormState = captureFormState();
-  isDirty = false;
-  updateMenuIndicator();
+  // Capture initial state for change detection (only if not already saved)
+  if (!savedFormStates.has(menuId)) {
+    savedFormStates.set(menuId, captureFormState());
+  }
 }
 
 // ====== UNSAVED CHANGES TRACKING ======
+function syncFormToConfig() {
+  if (!selectedMenuId) return;
+
+  const menu = currentConfig.menus.find(m => m.id === selectedMenuId);
+  if (!menu) return;
+
+  // Update menu fields from form
+  menu.name = menuNameInput.value.trim();
+  menu.customGptUrl = customGptUrlInput.value.trim();
+  menu.autoSubmit = autoSubmitCheckbox.checked;
+  menu.runAllEnabled = runAllEnabledCheckbox.checked;
+  menu.runAllShortcut = runAllShortcutInput.value.trim();
+
+  // Update actions from DOM
+  menu.actions = [];
+  const actionItems = actionsListContainer.querySelectorAll('.action-item');
+  actionItems.forEach((item, index) => {
+    menu.actions.push({
+      id: item.dataset.actionId,
+      title: item.querySelector('.action-title').value.trim(),
+      prompt: item.querySelector('.action-prompt').value.trim(),
+      shortcut: item.querySelector('.action-shortcut').value.trim(),
+      enabled: item.querySelector('.action-enabled').checked,
+      order: index + 1
+    });
+  });
+}
+
 function captureFormState() {
   if (!selectedMenuId) return null;
 
@@ -260,11 +293,19 @@ function compareFormStates(state1, state2) {
 }
 
 function checkForChanges() {
-  const currentState = captureFormState();
-  const hasChanges = compareFormStates(savedFormState, currentState);
+  if (!selectedMenuId) return;
 
-  if (hasChanges !== isDirty) {
-    isDirty = hasChanges;
+  const currentState = captureFormState();
+  const savedState = savedFormStates.get(selectedMenuId);
+  const hasChanges = compareFormStates(savedState, currentState);
+
+  const wasDirty = dirtyMenus.has(selectedMenuId);
+
+  if (hasChanges && !wasDirty) {
+    dirtyMenus.add(selectedMenuId);
+    updateMenuIndicator();
+  } else if (!hasChanges && wasDirty) {
+    dirtyMenus.delete(selectedMenuId);
     updateMenuIndicator();
   }
 }
@@ -914,9 +955,12 @@ async function handleSave() {
     // Save
     await saveConfig(currentConfig);
 
-    // Reset dirty state after successful save
-    savedFormState = captureFormState();
-    isDirty = false;
+    // Reset dirty state after successful save - clear all dirty menus
+    savedFormStates.clear();
+    dirtyMenus.clear();
+
+    // Recapture current menu state
+    savedFormStates.set(selectedMenuId, captureFormState());
 
     // Update menu list (name might have changed)
     renderMenuList();
