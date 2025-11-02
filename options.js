@@ -1287,4 +1287,75 @@ function attachEventListeners() {
 
   // Toggle Run All shortcut visibility when checkbox changes
   runAllEnabledCheckbox.addEventListener('change', toggleRunAllShortcutVisibility);
+
+  // Info icon popups
+  setupInfoPopups();
+}
+
+// ====== INFO POPUP HANDLING ======
+function setupInfoPopups() {
+  // Handle info icon clicks
+  document.addEventListener('click', (e) => {
+    const infoIcon = e.target.closest('.info-icon');
+    if (infoIcon) {
+      e.preventDefault();
+      e.stopPropagation();
+      const popupId = infoIcon.dataset.info;
+      const popup = document.getElementById(popupId);
+      if (popup) {
+        toggleInfoPopup(popup, infoIcon);
+      }
+    }
+
+    // Close popup when clicking close button
+    const closeBtn = e.target.closest('.info-popup-close');
+    if (closeBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const popup = closeBtn.closest('.info-popup');
+      if (popup) {
+        closeInfoPopup(popup);
+      }
+    }
+
+    // Close popup when clicking outside
+    const openPopup = document.querySelector('.info-popup.show');
+    if (openPopup && !e.target.closest('.info-popup') && !e.target.closest('.info-icon')) {
+      closeInfoPopup(openPopup);
+    }
+  });
+}
+
+function toggleInfoPopup(popup, icon) {
+  const isOpen = popup.classList.contains('show');
+  
+  // Close any other open popups
+  document.querySelectorAll('.info-popup.show').forEach(p => {
+    if (p !== popup) {
+      closeInfoPopup(p);
+    }
+  });
+
+  if (isOpen) {
+    closeInfoPopup(popup);
+  } else {
+    openInfoPopup(popup, icon);
+  }
+}
+
+function openInfoPopup(popup, icon) {
+  popup.classList.add('show');
+  
+  // Position popup relative to icon
+  const iconRect = icon.getBoundingClientRect();
+  
+  // Position below the icon, aligned to left
+  // Fixed positioning is relative to viewport, so use getBoundingClientRect() values directly
+  popup.style.position = 'fixed';
+  popup.style.top = `${iconRect.bottom + 8}px`;
+  popup.style.left = `${iconRect.left}px`;
+}
+
+function closeInfoPopup(popup) {
+  popup.classList.remove('show');
 }

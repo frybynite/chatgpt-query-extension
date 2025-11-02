@@ -56,7 +56,11 @@
             <h2>Menu Configuration</h2>
 
             <div class="form-group">
-              <label for="menuName">Menu Name <span class="required">*</span></label>
+              <label for="menuName">
+                Menu Name <span class="required">*</span>
+                <button type="button" class="info-icon" data-info="menuNameInfo" aria-label="Show information">ⓘ</button>
+                <span class="inline-hint">(max 50 characters)</span>
+              </label>
               <input
                 type="text"
                 id="menuName"
@@ -64,43 +68,82 @@
                 maxlength="50"
                 required
               />
-              <small>This name appears in the right-click context menu (max 50 characters)</small>
+              <!-- Info popup -->
+              <div id="menuNameInfo" class="info-popup">
+                <div class="info-popup-content">
+                  <p>This name appears in the right-click context menu.</p>
+                  <button type="button" class="info-popup-close" aria-label="Close">×</button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
-              <label for="customGptUrl">Custom GPT URL <span class="required">*</span></label>
+              <label for="customGptUrl">
+                Custom GPT URL <span class="required">*</span>
+                <button type="button" class="info-icon" data-info="customGptUrlInfo" aria-label="Show information">ⓘ</button>
+                <span class="inline-hint">(Create a custom GPT at <a href="https://chatgpt.com/gpts/mine" target="_blank" rel="noopener noreferrer">chatgpt.com/gpts/mine</a>)</span>
+              </label>
               <input
                 type="url"
                 id="customGptUrl"
                 placeholder="https://chatgpt.com/g/g-..."
                 required
               />
-              <small>The URL of your custom ChatGPT assistant. (Create a custom GPT at <a href="https://chatgpt.com/gpts/mine" target="_blank" rel="noopener noreferrer">chatgpt.com/gpts/mine</a>)</small>
+              <!-- Info popup -->
+              <div id="customGptUrlInfo" class="info-popup">
+                <div class="info-popup-content">
+                  <p>The URL of your custom ChatGPT assistant.</p>
+                  <button type="button" class="info-popup-close" aria-label="Close">×</button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
               <label>
                 <input type="checkbox" id="autoSubmit" />
                 <span>Auto Submit</span>
+                <button type="button" class="info-icon" data-info="autoSubmitInfo" aria-label="Show information">ⓘ</button>
               </label>
-              <small>Automatically submit prompts without manual send</small>
+              <!-- Info popup -->
+              <div id="autoSubmitInfo" class="info-popup">
+                <div class="info-popup-content">
+                  <p>Automatically submit prompts without manual send.</p>
+                  <button type="button" class="info-popup-close" aria-label="Close">×</button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
               <label>
                 <input type="checkbox" id="runAllEnabled" />
                 <span>Enable "Run All Actions"</span>
+                <button type="button" class="info-icon" data-info="runAllEnabledInfo" aria-label="Show information">ⓘ</button>
               </label>
-              <small>Show "Run All" in this menu's context menu and enable keyboard shortcut</small>
+              <!-- Info popup -->
+              <div id="runAllEnabledInfo" class="info-popup">
+                <div class="info-popup-content">
+                  <p>Show "Run All" in this menu's context menu and enable keyboard shortcut.</p>
+                  <button type="button" class="info-popup-close" aria-label="Close">×</button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group shortcut-group" id="runAllShortcutGroup">
-              <label for="runAllShortcut">Run All Actions Shortcut</label>
+              <label for="runAllShortcut">
+                Run All Actions Shortcut
+                <button type="button" class="info-icon" data-info="runAllShortcutInfo" aria-label="Show information">ⓘ</button>
+              </label>
               <div class="shortcut-capture">
                 <input type="text" id="runAllShortcut" placeholder="None" readonly />
                 <button type="button" class="btn-icon btn-capture" id="runAllShortcutBtn" title="Record shortcut">⌨️</button>
               </div>
-              <small>Keyboard shortcut to run all enabled actions in this menu</small>
+              <!-- Info popup -->
+              <div id="runAllShortcutInfo" class="info-popup">
+                <div class="info-popup-content">
+                  <p>Keyboard shortcut to run all enabled actions in this menu.</p>
+                  <button type="button" class="info-popup-close" aria-label="Close">×</button>
+                </div>
+              </div>
             </div>
           </section>
 

@@ -366,13 +366,110 @@ h2 {
 /* ====== FORM GROUPS ====== */
 .form-group {
   margin-bottom: 20px;
+  position: relative;
 }
 
 .form-group label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 500;
   margin-bottom: 6px;
   color: #5f6368;
+}
+
+.inline-hint {
+  font-size: 12px;
+  color: #999;
+  font-weight: normal;
+  margin-left: auto;
+}
+
+.inline-hint a {
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.inline-hint a:hover {
+  text-decoration: underline;
+}
+
+.info-icon {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #5f6368;
+  opacity: 0.7;
+  transition: opacity 0.2s, color 0.2s;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.info-icon:hover {
+  opacity: 1;
+  color: #1a73e8;
+}
+
+.info-icon:focus {
+  outline: none;
+}
+
+.info-popup {
+  position: absolute;
+  z-index: 1000;
+  display: none;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.info-popup.show {
+  display: block;
+}
+
+.info-popup-content {
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 12px 32px 12px 12px;
+  position: relative;
+  font-size: 13px;
+  color: #5f6368;
+  line-height: 1.5;
+}
+
+.info-popup-content p {
+  margin: 0;
+}
+
+.info-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #5f6368;
+  opacity: 0.6;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.info-popup-close:hover {
+  opacity: 1;
 }
 
 .form-group input[type="text"],
@@ -453,6 +550,19 @@ h2 {
 .form-group.checkboxes small {
   margin-left: 24px;
   margin-top: 0;
+}
+
+/* Checkbox labels that contain info icons */
+.form-group label:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.form-group label:has(input[type="checkbox"]) .info-icon {
+  /* Position right after the text, not right-aligned */
+  margin-left: 0;
 }
 
 /* ====== ACTIONS LIST ====== */
