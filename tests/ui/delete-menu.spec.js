@@ -5,11 +5,12 @@ import { test, expect } from '../fixtures/extension.js';
  *
  * Verifies that:
  * 1. Delete button is visible when menu is selected
- * 2. Clicking delete shows confirmation dialog
+ * 2. Clicking delete shows confirmation modal (not browser dialog)
  * 3. Confirming deletion removes the menu
  * 4. Canceling deletion keeps the menu
  * 5. Menu counter updates after deletion
  * 6. Another menu is auto-selected after deletion
+ * 7. Modal shows action count when deleting menu with actions
  */
 
 test.describe('UI Tests - Delete Menu', () => {
@@ -56,17 +57,33 @@ test.describe('UI Tests - Delete Menu', () => {
     const beforeCount = await menuItems.count();
     console.log(`Menu count before deletion: ${beforeCount}`);
 
-    // Set up dialog handler to accept the confirmation
-    optionsPage.on('dialog', dialog => {
-      console.log(`Confirmation dialog: "${dialog.message()}"`);
-      expect(dialog.message()).toContain('Delete');
-      dialog.accept();
-    });
-
-    // Click delete
+    // Click delete - this will show the modal
     const deleteBtn = optionsPage.locator('#delete-menu');
     await deleteBtn.click();
+    await optionsPage.waitForTimeout(300);
+
+    // Wait for modal to appear and verify it
+    const modalOverlay = optionsPage.locator('#modal-overlay');
+    await expect(modalOverlay).toBeVisible();
+    await expect(modalOverlay).not.toHaveClass(/hidden/);
+    
+    const modalTitle = optionsPage.locator('#modal-title');
+    await expect(modalTitle).toContainText('Delete Menu');
+    
+    const modalMessage = optionsPage.locator('#modal-message');
+    const messageText = await modalMessage.textContent();
+    expect(messageText).toContain('Delete');
+    console.log(`✓ Modal appeared with message: "${messageText}"`);
+
+    // Click Yes button to confirm
+    const yesBtn = optionsPage.locator('#modal-ok');
+    await expect(yesBtn).toBeVisible();
+    await expect(yesBtn).toContainText('Yes');
+    await yesBtn.click();
     await optionsPage.waitForTimeout(500);
+
+    // Verify modal is closed
+    await expect(modalOverlay).toHaveClass(/hidden/);
 
     // Verify menu was deleted
     const afterCount = await menuItems.count();
@@ -79,7 +96,7 @@ test.describe('UI Tests - Delete Menu', () => {
     console.log(`✓ Menu "${uniqueName}" removed from sidebar`);
   });
 
-  test('should cancel deletion when dialog is dismissed', async ({ optionsPage, page }) => {
+  test('should cancel deletion when modal is dismissed', async ({ optionsPage, page }) => {
     await optionsPage.waitForLoadState('networkidle');
 
     // Create a menu
@@ -105,16 +122,24 @@ test.describe('UI Tests - Delete Menu', () => {
     const menuItems = optionsPage.locator('.menu-item');
     const beforeCount = await menuItems.count();
 
-    // Set up dialog handler to CANCEL
-    optionsPage.on('dialog', dialog => {
-      console.log(`Canceling deletion dialog`);
-      dialog.dismiss();
-    });
-
-    // Click delete
+    // Click delete - this will show the modal
     const deleteBtn = optionsPage.locator('#delete-menu');
     await deleteBtn.click();
     await optionsPage.waitForTimeout(300);
+
+    // Wait for modal to appear
+    const modalOverlay = optionsPage.locator('#modal-overlay');
+    await expect(modalOverlay).toBeVisible();
+
+    // Click Cancel button to dismiss
+    const cancelBtn = optionsPage.locator('#modal-cancel');
+    await expect(cancelBtn).toBeVisible();
+    await expect(cancelBtn).toContainText('Cancel');
+    await cancelBtn.click();
+    await optionsPage.waitForTimeout(300);
+
+    // Verify modal is closed
+    await expect(modalOverlay).toHaveClass(/hidden/);
 
     // Verify menu was NOT deleted
     const afterCount = await menuItems.count();
@@ -157,11 +182,12 @@ test.describe('UI Tests - Delete Menu', () => {
     await firstMenuItem.click();
     await optionsPage.waitForTimeout(200);
 
-    // Accept deletion dialog
-    optionsPage.on('dialog', dialog => dialog.accept());
-
+    // Click delete and accept modal confirmation
     const deleteBtn = optionsPage.locator('#delete-menu');
     await deleteBtn.click();
+    await optionsPage.waitForTimeout(300);
+    const modalYesBtn = optionsPage.locator('#modal-ok');
+    await modalYesBtn.click();
     await optionsPage.waitForTimeout(500);
 
     // Verify another menu is now selected
@@ -203,12 +229,12 @@ test.describe('UI Tests - Delete Menu', () => {
     const afterAddText = await menuCounter.textContent();
     console.log(`Counter after add: ${afterAddText}`);
 
-    // Accept deletion
-    optionsPage.on('dialog', dialog => dialog.accept());
-
-    // Delete the menu
+    // Click delete and accept modal confirmation
     const deleteBtn = optionsPage.locator('#delete-menu');
     await deleteBtn.click();
+    await optionsPage.waitForTimeout(300);
+    const modalYesBtn = optionsPage.locator('#modal-ok');
+    await modalYesBtn.click();
     await optionsPage.waitForTimeout(500);
 
     // Counter should be back to original
@@ -217,7 +243,7 @@ test.describe('UI Tests - Delete Menu', () => {
     console.log(`✓ Counter after delete: ${afterDeleteText}`);
   });
 
-  test('should show action count in confirmation dialog', async ({ optionsPage, page }) => {
+  test('should show action count in confirmation modal', async ({ optionsPage, page }) => {
     await optionsPage.waitForLoadState('networkidle');
 
     // Create a menu with actions
@@ -249,21 +275,27 @@ test.describe('UI Tests - Delete Menu', () => {
     await saveBtn.click();
     await optionsPage.waitForTimeout(300);
 
-    // Capture the dialog message
-    let dialogMessage = '';
-    optionsPage.on('dialog', dialog => {
-      dialogMessage = dialog.message();
-      console.log(`Dialog message: "${dialogMessage}"`);
-      dialog.accept();
-    });
-
-    // Delete the menu
+    // Delete the menu - this will show the modal
     const deleteBtn = optionsPage.locator('#delete-menu');
     await deleteBtn.click();
-    await optionsPage.waitForTimeout(500);
+    await optionsPage.waitForTimeout(300);
 
-    // Verify dialog mentioned the action count
-    expect(dialogMessage).toContain('action');
-    console.log(`✓ Confirmation dialog showed action count`);
+    // Wait for modal to appear
+    const modalOverlay = optionsPage.locator('#modal-overlay');
+    await expect(modalOverlay).toBeVisible();
+
+    // Capture the modal message
+    const modalMessage = optionsPage.locator('#modal-message');
+    const messageText = await modalMessage.textContent();
+    console.log(`Modal message: "${messageText}"`);
+
+    // Verify modal mentioned the action count
+    expect(messageText).toContain('action');
+    console.log(`✓ Confirmation modal showed action count`);
+
+    // Cancel the deletion
+    const cancelBtn = optionsPage.locator('#modal-cancel');
+    await cancelBtn.click();
+    await optionsPage.waitForTimeout(300);
   });
 });
