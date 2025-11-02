@@ -9,7 +9,12 @@
   <div class="container">
     <header>
       <h1>ChatGPT Custom Prompts</h1>
+      <div class="header-actions">
+        <button id="export-config" class="btn-secondary">Export Menus</button>
+        <button id="import-config" class="btn-secondary">Import Menus</button>
+      </div>
       <img src="icons/icon-48.png" alt="ChatGPT Custom Prompts Icon" class="header-icon">
+      <input type="file" id="import-file-input" accept=".json" style="display: none;" />
     </header>
 
     <!-- Error banner (hidden by default) -->
@@ -20,16 +25,6 @@
 
     <!-- Success banner (hidden by default) -->
     <div id="success-banner" class="success-banner hidden"></div>
-
-    <!-- Global Import/Export Section -->
-    <section class="global-actions-section">
-      <div class="import-export-buttons">
-        <button id="export-config" class="btn-secondary">Export All Settings</button>
-        <button id="import-config" class="btn-secondary">Import Settings</button>
-      </div>
-      <small class="import-export-note">Exports/imports all menus and their actions</small>
-      <input type="file" id="import-file-input" accept=".json" style="display: none;" />
-    </section>
 
     <!-- Main Content: Sidebar + Detail Panel -->
     <div class="main-content">
