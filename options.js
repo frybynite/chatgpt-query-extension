@@ -30,6 +30,10 @@ const exportButton = document.getElementById('export-config');
 const importButton = document.getElementById('import-config');
 const importFileInput = document.getElementById('import-file-input');
 
+// Hamburger menu
+const hamburgerButton = document.getElementById('hamburger-menu');
+const dropdownMenu = document.getElementById('dropdown-menu');
+
 // Banners
 const errorBanner = document.getElementById('error-banner');
 const warningBanner = document.getElementById('warning-banner');
@@ -38,6 +42,8 @@ const reloadReminder = document.getElementById('reload-reminder');
 
 // Modal
 const modalOverlay = document.getElementById('modal-overlay');
+const modalDialog = modalOverlay.querySelector('.modal-dialog');
+const modalIcon = document.getElementById('modal-icon');
 const modalTitle = document.getElementById('modal-title');
 const modalMessage = document.getElementById('modal-message');
 const modalClose = document.getElementById('modal-close');
@@ -1181,8 +1187,8 @@ async function handleImportFile(e) {
     }
 
     const confirmed = await showConfirmModal(
-      'Import Configuration',
-      'Import this configuration? Current settings will be replaced.',
+      'Import Menus',
+      'Import new menus? Your current menus will be replaced.',
       'warning'
     );
     if (!confirmed) {
@@ -1282,21 +1288,30 @@ function showConfirmModal(title, message, type = 'warning') {
   return new Promise((resolve) => {
     modalTitle.textContent = title;
     modalMessage.textContent = message;
-    
+
     // Show cancel button for confirmations
     modalCancel.style.display = 'inline-block';
     modalOk.textContent = 'Yes';
-    
-    // Set title color based on type
-    modalTitle.className = 'modal-title';
-    if (type === 'error') {
-      modalTitle.style.color = '#cc0033';
-    } else if (type === 'warning') {
-      modalTitle.style.color = '#e65100';
+
+    // Reset modal dialog classes
+    modalDialog.className = 'modal-dialog';
+
+    // Set icon and modal type class based on type
+    if (type === 'warning') {
+      modalIcon.textContent = '⚠️';
+      modalDialog.classList.add('modal-warning');
+    } else if (type === 'error') {
+      modalIcon.textContent = '❌';
+      modalDialog.classList.add('modal-warning'); // Use warning style for errors
+    } else if (type === 'info') {
+      modalIcon.textContent = 'ℹ️';
+      modalDialog.classList.add('modal-info');
     } else if (type === 'success') {
-      modalTitle.style.color = '#137333';
+      modalIcon.textContent = '✅';
+      modalDialog.classList.add('modal-info'); // Use info style for success
     } else {
-      modalTitle.style.color = '#202124';
+      modalIcon.textContent = 'ℹ️';
+      modalDialog.classList.add('modal-info');
     }
     
     // Remove existing listeners
@@ -1408,9 +1423,38 @@ function attachEventListeners() {
   saveButton.addEventListener('click', handleSave);
 
   // Export/Import
-  exportButton.addEventListener('click', handleExport);
-  importButton.addEventListener('click', handleImportClick);
+  exportButton.addEventListener('click', () => {
+    handleExport();
+    dropdownMenu.classList.add('hidden');
+    hamburgerButton.setAttribute('aria-expanded', 'false');
+  });
+  importButton.addEventListener('click', () => {
+    handleImportClick();
+    dropdownMenu.classList.add('hidden');
+    hamburgerButton.setAttribute('aria-expanded', 'false');
+  });
   importFileInput.addEventListener('change', handleImportFile);
+
+  // Hamburger menu
+  hamburgerButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isExpanded = hamburgerButton.getAttribute('aria-expanded') === 'true';
+    if (isExpanded) {
+      dropdownMenu.classList.add('hidden');
+      hamburgerButton.setAttribute('aria-expanded', 'false');
+    } else {
+      dropdownMenu.classList.remove('hidden');
+      hamburgerButton.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!hamburgerButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+      dropdownMenu.classList.add('hidden');
+      hamburgerButton.setAttribute('aria-expanded', 'false');
+    }
+  });
 
   // Run All shortcut capture
   runAllShortcutBtn.addEventListener('click', () => {

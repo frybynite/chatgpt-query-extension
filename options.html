@@ -8,10 +8,15 @@
 <body>
   <div class="container">
     <header>
-      <h1>ChatGPT Custom Prompts</h1>
-      <div class="header-actions">
-        <button id="export-config" class="btn-secondary">Export Menus</button>
-        <button id="import-config" class="btn-secondary">Import Menus</button>
+      <div class="header-left">
+        <button id="hamburger-menu" class="hamburger-btn" aria-label="Menu" aria-expanded="false">
+          <span class="hamburger-icon">☰</span>
+        </button>
+        <div id="dropdown-menu" class="dropdown-menu hidden">
+          <button id="export-config" class="dropdown-item">Export Menus...</button>
+          <button id="import-config" class="dropdown-item">Import Menus...</button>
+        </div>
+        <h1>ChatGPT Custom Prompts</h1>
       </div>
       <img src="icons/icon-48.png" alt="ChatGPT Custom Prompts Icon" class="header-icon">
       <input type="file" id="import-file-input" accept=".json" style="display: none;" />
@@ -30,7 +35,10 @@
     <div id="modal-overlay" class="modal-overlay hidden">
       <div class="modal-dialog">
         <div class="modal-header">
-          <h3 class="modal-title" id="modal-title"></h3>
+          <div class="modal-header-content">
+            <span class="modal-icon" id="modal-icon"></span>
+            <h3 class="modal-title" id="modal-title"></h3>
+          </div>
           <button type="button" class="modal-close" id="modal-close" aria-label="Close">×</button>
         </div>
         <div class="modal-body">
