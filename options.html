@@ -59,15 +59,17 @@
               <label for="menuName">
                 Menu Name <span class="required">*</span>
                 <button type="button" class="info-icon" data-info="menuNameInfo" aria-label="Show information">ⓘ</button>
-                <span class="inline-hint">(max 50 characters)</span>
               </label>
-              <input
-                type="text"
-                id="menuName"
-                placeholder="Send to ChatGPT"
-                maxlength="50"
-                required
-              />
+              <div class="input-with-hint">
+                <input
+                  type="text"
+                  id="menuName"
+                  placeholder="Send to ChatGPT"
+                  maxlength="50"
+                  required
+                />
+                <span class="inline-hint">(max 50)</span>
+              </div>
               <!-- Info popup -->
               <div id="menuNameInfo" class="info-popup">
                 <div class="info-popup-content">
