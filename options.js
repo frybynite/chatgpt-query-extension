@@ -61,6 +61,113 @@ function convertShortcutForDisplay(shortcut) {
   }
 }
 
+// Convert shortcuts to word format for tooltips
+// Mac: ⌥ → "Option", ⌘ → "Command", ⌃ → "Control", ⇧ → "Shift"
+// Windows: Ctrl → "Control", Alt → "Alt", Shift → "Shift", Meta → "Windows"
+function convertShortcutToWords(shortcut) {
+  if (!shortcut) return '';
+
+  const parts = shortcut.split('+');
+  
+  const convertedParts = parts.map(part => {
+    const trimmed = part.trim();
+    
+    // Handle Mac symbols first (these can appear regardless of platform if saved on Mac)
+    if (trimmed === '⌃') return 'Control';
+    if (trimmed === '⌥') return 'Option';
+    if (trimmed === '⇧') return 'Shift';
+    if (trimmed === '⌘') return 'Command';
+    
+    // Handle Windows abbreviations (these can appear regardless of platform if saved on Windows)
+    if (trimmed === 'Ctrl') return 'Control';
+    if (trimmed === 'Alt') return 'Alt';
+    if (trimmed === 'Shift') return 'Shift';
+    if (trimmed === 'Meta') return 'Windows';
+    
+    // Return as-is for regular keys (letters, numbers, arrow keys, etc.)
+    return trimmed;
+  });
+  
+  return convertedParts.join(' + ');
+}
+
+// Update shortcut input field with formatted display and tooltip
+function updateShortcutDisplay(shortcutInput, shortcutValue) {
+  if (shortcutInput) {
+    // Set the display value (symbols/abbreviations only)
+    shortcutInput.value = convertShortcutForDisplay(shortcutValue);
+    
+    // Update custom tooltip with word version
+    const wordVersion = convertShortcutToWords(shortcutValue);
+    let tooltipElement = shortcutInput.parentElement.querySelector('.shortcut-tooltip');
+    
+    if (wordVersion) {
+      if (!tooltipElement) {
+        // Create tooltip element if it doesn't exist
+        tooltipElement = document.createElement('div');
+        tooltipElement.className = 'shortcut-tooltip';
+        shortcutInput.parentElement.appendChild(tooltipElement);
+        setupTooltipEvents(shortcutInput, tooltipElement);
+      }
+      tooltipElement.textContent = wordVersion;
+    } else {
+      // Hide tooltip if no shortcut (but keep element for reuse)
+      if (tooltipElement) {
+        tooltipElement.classList.remove('show');
+        tooltipElement.textContent = '';
+      }
+    }
+  }
+}
+
+// Setup tooltip hover events with fast delay (150ms instead of default ~300ms)
+function setupTooltipEvents(input, tooltip) {
+  // Check if already set up (prevent duplicate listeners)
+  if (input.dataset.tooltipSetup === 'true') {
+    return;
+  }
+  
+  let hoverTimeout;
+  
+  const showTooltip = () => {
+    hoverTimeout = setTimeout(() => {
+      tooltip.classList.add('show');
+    }, 150); // 150ms delay (half the default ~300ms)
+  };
+  
+  const hideTooltip = () => {
+    clearTimeout(hoverTimeout);
+    tooltip.classList.remove('show');
+  };
+  
+  // Add event listeners
+  input.addEventListener('mouseenter', showTooltip);
+  input.addEventListener('mouseleave', hideTooltip);
+  input.addEventListener('focus', showTooltip);
+  input.addEventListener('blur', hideTooltip);
+  
+  // Mark as set up
+  input.dataset.tooltipSetup = 'true';
+}
+
+// Extract raw shortcut value from displayed format
+// The displayed value is in platform-appropriate format (Mac symbols or Windows abbreviations)
+// We need to normalize it back to a consistent stored format
+// For consistency, we'll store shortcuts in the format that matches the current platform
+function extractRawShortcut(displayValue) {
+  if (!displayValue) return '';
+  
+  let rawValue = displayValue.trim();
+  
+  // If empty, return empty
+  if (!rawValue) return '';
+  
+  // The display value is already in the format for the current platform
+  // So we can use it directly as the stored value
+  // (Shortcuts are stored in platform-specific format based on where they were captured)
+  return rawValue;
+}
+
 // ====== STATE ======
 let currentConfig = null;
 let selectedMenuId = null;
@@ -216,7 +323,7 @@ function loadMenuDetails(menuId) {
   customGptUrlInput.value = menu.customGptUrl;
   autoSubmitCheckbox.checked = menu.autoSubmit;
   runAllEnabledCheckbox.checked = menu.runAllEnabled;
-  runAllShortcutInput.value = convertShortcutForDisplay(menu.runAllShortcut || '');
+  updateShortcutDisplay(runAllShortcutInput, menu.runAllShortcut || '');
 
   // Show/hide Run All shortcut based on checkbox
   toggleRunAllShortcutVisibility();
@@ -242,7 +349,7 @@ function syncFormToConfig() {
   menu.customGptUrl = customGptUrlInput.value.trim();
   menu.autoSubmit = autoSubmitCheckbox.checked;
   menu.runAllEnabled = runAllEnabledCheckbox.checked;
-  menu.runAllShortcut = runAllShortcutInput.value.trim();
+  menu.runAllShortcut = extractRawShortcut(runAllShortcutInput.value);
 
   // Update actions from DOM
   menu.actions = [];
@@ -252,7 +359,7 @@ function syncFormToConfig() {
       id: item.dataset.actionId,
       title: item.querySelector('.action-title').value.trim(),
       prompt: item.querySelector('.action-prompt').value.trim(),
-      shortcut: item.querySelector('.action-shortcut').value.trim(),
+      shortcut: extractRawShortcut(item.querySelector('.action-shortcut').value),
       enabled: item.querySelector('.action-enabled').checked,
       order: index + 1
     });
@@ -268,7 +375,7 @@ function captureFormState() {
     customGptUrl: customGptUrlInput.value.trim(),
     autoSubmit: autoSubmitCheckbox.checked,
     runAllEnabled: runAllEnabledCheckbox.checked,
-    runAllShortcut: runAllShortcutInput.value.trim(),
+    runAllShortcut: extractRawShortcut(runAllShortcutInput.value),
     actions: []
   };
 
@@ -280,7 +387,7 @@ function captureFormState() {
       order: index + 1,
       title: item.querySelector('.action-title').value.trim(),
       prompt: item.querySelector('.action-prompt').value.trim(),
-      shortcut: item.querySelector('.action-shortcut').value.trim(),
+      shortcut: extractRawShortcut(item.querySelector('.action-shortcut').value),
       enabled: item.querySelector('.action-enabled').checked
     });
   });
@@ -506,8 +613,10 @@ function createActionElement(action, index) {
 
   titleInput.value = action.title;
   promptInput.value = action.prompt;
-  shortcutInput.value = convertShortcutForDisplay(action.shortcut || '');
   enabledCheckbox.checked = action.enabled;
+  
+  // Update shortcut display (this will also set up tooltip)
+  updateShortcutDisplay(shortcutInput, action.shortcut || '');
 
   attachActionEventListeners(actionItem);
 
@@ -532,7 +641,7 @@ function attachActionEventListeners(actionItem) {
   shortcutInput.addEventListener('keydown', (e) => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
-      shortcutInput.value = '';
+      updateShortcutDisplay(shortcutInput, '');
       reloadReminder.classList.remove('hidden');
       hideAllBanners();
     }
@@ -709,7 +818,7 @@ function captureShortcut(shortcutInput) {
     if (e.metaKey) parts.push(isMac ? '⌘' : 'Meta');
 
     if (parts.length === 0) {
-      shortcutInput.value = '';
+      updateShortcutDisplay(shortcutInput, '');
       shortcutInput.classList.remove('capturing');
       const modifierHint = isMac
         ? 'modifier key (⌃ Control, ⌥ Option, ⇧ Shift, or ⌘ Command)'
@@ -733,7 +842,9 @@ function captureShortcut(shortcutInput) {
     parts.push(displayKey);
 
     const shortcutString = parts.join('+');
-    shortcutInput.value = shortcutString;
+    
+    // Update display with formatted version (symbols + word version)
+    updateShortcutDisplay(shortcutInput, shortcutString);
 
     reloadReminder.classList.remove('hidden');
     checkShortcutDuplicate(shortcutInput, shortcutString);
@@ -758,7 +869,7 @@ function checkShortcutDuplicate(currentInput, shortcut) {
     if (menu) {
       // Update Run All settings from form
       menu.runAllEnabled = runAllEnabledCheckbox.checked;
-      menu.runAllShortcut = runAllShortcutInput.value.trim();
+      menu.runAllShortcut = extractRawShortcut(runAllShortcutInput.value);
 
       // Collect current actions from DOM
       menu.actions = [];
@@ -766,7 +877,7 @@ function checkShortcutDuplicate(currentInput, shortcut) {
       actionItems.forEach((item, index) => {
         const actionId = item.dataset.actionId;
         const title = item.querySelector('.action-title').value.trim();
-        const shortcutVal = item.querySelector('.action-shortcut').value.trim();
+        const shortcutVal = extractRawShortcut(item.querySelector('.action-shortcut').value);
 
         menu.actions.push({
           id: actionId,
@@ -919,7 +1030,7 @@ async function handleSave() {
       const id = item.dataset.actionId;
       const titleInput = item.querySelector('.action-title');
       const promptInput = item.querySelector('.action-prompt');
-      const shortcut = item.querySelector('.action-shortcut').value.trim();
+      const shortcut = extractRawShortcut(item.querySelector('.action-shortcut').value);
       const enabled = item.querySelector('.action-enabled').checked;
 
       const title = titleInput.value.trim();
@@ -1140,7 +1251,13 @@ function attachEventListeners() {
   customGptUrlInput.addEventListener('input', checkForChanges);
   autoSubmitCheckbox.addEventListener('change', checkForChanges);
   runAllEnabledCheckbox.addEventListener('change', checkForChanges);
-  runAllShortcutInput.addEventListener('input', checkForChanges);
+  runAllShortcutInput.addEventListener('input', (e) => {
+    // Update display when shortcut changes (e.g., from import)
+    // Extract the raw shortcut value and reformat it
+    const rawValue = extractRawShortcut(e.target.value);
+    updateShortcutDisplay(runAllShortcutInput, rawValue);
+    checkForChanges();
+  });
 
   // Actions
   addActionButton.addEventListener('click', handleAddAction);
@@ -1162,7 +1279,7 @@ function attachEventListeners() {
   runAllShortcutInput.addEventListener('keydown', (e) => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
-      runAllShortcutInput.value = '';
+      updateShortcutDisplay(runAllShortcutInput, '');
       reloadReminder.classList.remove('hidden');
       hideAllBanners();
     }
