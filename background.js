@@ -171,6 +171,19 @@ async function rebuildContextMenus() {
   }
 }
 
+// ====== SHORTCUT NORMALIZATION ======
+// Convert Mac unicode symbols to standard key names for shortcut matching
+function normalizeShortcut(shortcut) {
+  if (!shortcut) return '';
+
+  // Convert Mac symbols to PC key names (for consistent matching)
+  return shortcut
+    .replace(/⌃/g, 'Ctrl')
+    .replace(/⌥/g, 'Alt')
+    .replace(/⇧/g, 'Shift')
+    .replace(/⌘/g, 'Meta');
+}
+
 // ====== SHORTCUT MAP BUILDER ======
 function buildShortcutMap(config) {
   const map = new Map();
@@ -182,12 +195,15 @@ function buildShortcutMap(config) {
       menu.actions
         .filter(action => action.enabled && action.shortcut)
         .forEach(action => {
-          map.set(action.shortcut, { menuId: menu.id, actionId: action.id });
+          // Normalize shortcut to standard key names for matching
+          const normalizedShortcut = normalizeShortcut(action.shortcut);
+          map.set(normalizedShortcut, { menuId: menu.id, actionId: action.id });
         });
 
       // Add Run All shortcut for this menu if enabled and configured
       if (menu.runAllEnabled && menu.runAllShortcut) {
-        map.set(menu.runAllShortcut, { menuId: menu.id, actionId: 'runAll' });
+        const normalizedShortcut = normalizeShortcut(menu.runAllShortcut);
+        map.set(normalizedShortcut, { menuId: menu.id, actionId: 'runAll' });
       }
     });
   }
@@ -196,11 +212,13 @@ function buildShortcutMap(config) {
     config.actions
       ?.filter(action => action.enabled && action.shortcut)
       .forEach(action => {
-        map.set(action.shortcut, action.id);
+        const normalizedShortcut = normalizeShortcut(action.shortcut);
+        map.set(normalizedShortcut, action.id);
       });
 
     if (config.globalSettings?.runAllEnabled && config.globalSettings?.runAllShortcut) {
-      map.set(config.globalSettings.runAllShortcut, 'runAll');
+      const normalizedShortcut = normalizeShortcut(config.globalSettings.runAllShortcut);
+      map.set(normalizedShortcut, 'runAll');
     }
   }
 
