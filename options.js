@@ -36,6 +36,14 @@ const warningBanner = document.getElementById('warning-banner');
 const successBanner = document.getElementById('success-banner');
 const reloadReminder = document.getElementById('reload-reminder');
 
+// Modal
+const modalOverlay = document.getElementById('modal-overlay');
+const modalTitle = document.getElementById('modal-title');
+const modalMessage = document.getElementById('modal-message');
+const modalClose = document.getElementById('modal-close');
+const modalOk = document.getElementById('modal-ok');
+const modalCancel = document.getElementById('modal-cancel');
+
 // ====== PLATFORM DETECTION ======
 const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
@@ -496,7 +504,8 @@ async function handleDeleteMenu() {
     ? `Delete menu "${menu.name}" and its ${actionCount} action(s)?`
     : `Delete menu "${menu.name}"?`;
 
-  if (!confirm(confirmMessage)) return;
+  const confirmed = await showConfirmModal('Delete Menu', confirmMessage, 'warning');
+  if (!confirmed) return;
 
   // Remove menu
   currentConfig.menus = currentConfig.menus.filter(m => m.id !== selectedMenuId);
@@ -696,10 +705,11 @@ function moveActionDown(actionItem) {
   }
 }
 
-function deleteAction(actionItem) {
+async function deleteAction(actionItem) {
   const actionTitle = actionItem.querySelector('.action-title').value || 'this action';
 
-  if (confirm(`Delete "${actionTitle}"?`)) {
+  const confirmed = await showConfirmModal('Delete Action', `Delete "${actionTitle}"?`, 'warning');
+  if (confirmed) {
     actionItem.remove();
     updateActionOrders();
     checkForChanges();
@@ -1170,7 +1180,12 @@ async function handleImportFile(e) {
       return;
     }
 
-    if (!confirm('Import this configuration? Current settings will be replaced.')) {
+    const confirmed = await showConfirmModal(
+      'Import Configuration',
+      'Import this configuration? Current settings will be replaced.',
+      'warning'
+    );
+    if (!confirmed) {
       importFileInput.value = '';
       return;
     }
@@ -1223,6 +1238,133 @@ function hideAllBanners() {
   warningBanner.classList.add('hidden');
   successBanner.classList.add('hidden');
 }
+
+// ====== MODAL DIALOG ======
+function showModal(title, message, type = 'info') {
+  modalTitle.textContent = title;
+  modalMessage.textContent = message;
+  
+  // Hide cancel button for regular modals
+  modalCancel.style.display = 'none';
+  modalOk.textContent = 'OK';
+  
+  // Set title color based on type
+  modalTitle.className = 'modal-title';
+  if (type === 'error') {
+    modalTitle.style.color = '#cc0033';
+  } else if (type === 'warning') {
+    modalTitle.style.color = '#e65100';
+  } else if (type === 'success') {
+    modalTitle.style.color = '#137333';
+  } else {
+    modalTitle.style.color = '#202124';
+  }
+  
+  modalOverlay.classList.remove('hidden');
+  // Use setTimeout to trigger transition
+  setTimeout(() => {
+    modalOverlay.classList.add('show');
+  }, 10);
+  
+  // Focus the OK button for accessibility
+  modalOk.focus();
+}
+
+function hideModal() {
+  modalOverlay.classList.remove('show');
+  setTimeout(() => {
+    modalOverlay.classList.add('hidden');
+  }, 200); // Wait for transition
+}
+
+// Show confirmation modal (returns Promise<boolean>)
+function showConfirmModal(title, message, type = 'warning') {
+  return new Promise((resolve) => {
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    
+    // Show cancel button for confirmations
+    modalCancel.style.display = 'inline-block';
+    modalOk.textContent = 'Yes';
+    
+    // Set title color based on type
+    modalTitle.className = 'modal-title';
+    if (type === 'error') {
+      modalTitle.style.color = '#cc0033';
+    } else if (type === 'warning') {
+      modalTitle.style.color = '#e65100';
+    } else if (type === 'success') {
+      modalTitle.style.color = '#137333';
+    } else {
+      modalTitle.style.color = '#202124';
+    }
+    
+    // Remove existing listeners
+    const newOkHandler = () => {
+      hideModal();
+      resolve(true);
+      modalOk.removeEventListener('click', newOkHandler);
+      modalCancel.removeEventListener('click', newCancelHandler);
+      document.removeEventListener('keydown', escapeHandler);
+    };
+    
+    const newCancelHandler = () => {
+      hideModal();
+      resolve(false);
+      modalOk.removeEventListener('click', newOkHandler);
+      modalCancel.removeEventListener('click', newCancelHandler);
+      document.removeEventListener('keydown', escapeHandler);
+    };
+    
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape') {
+        newCancelHandler();
+      }
+    };
+    
+    modalOk.addEventListener('click', newOkHandler);
+    modalCancel.addEventListener('click', newCancelHandler);
+    document.addEventListener('keydown', escapeHandler);
+    
+    modalOverlay.classList.remove('hidden');
+    setTimeout(() => {
+      modalOverlay.classList.add('show');
+    }, 10);
+    
+    // Focus the Cancel button for safety (user needs to actively choose Yes)
+    modalCancel.focus();
+  });
+}
+
+// Modal event listeners (for regular modals)
+if (modalClose) {
+  modalClose.addEventListener('click', hideModal);
+}
+
+if (modalOk) {
+  // Default handler for regular modals (will be overridden for confirm modals)
+  modalOk.addEventListener('click', () => {
+    if (modalCancel.style.display === 'none') {
+      hideModal();
+    }
+  });
+}
+
+// Close modal on overlay click (only for regular modals)
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay && modalCancel.style.display === 'none') {
+      hideModal();
+    }
+  });
+}
+
+// Close modal on Escape key (only for regular modals)
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalOverlay.classList.contains('show') && modalCancel.style.display === 'none') {
+    hideModal();
+  }
+});
 
 // ====== RUN ALL VISIBILITY TOGGLE ======
 function toggleRunAllShortcutVisibility() {
