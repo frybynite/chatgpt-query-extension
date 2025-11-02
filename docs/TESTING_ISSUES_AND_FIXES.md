@@ -277,7 +277,7 @@ Received: 1
 **Severity**: Medium – Affects 2 priority context-menu specs
 **Tests Affected**: `tests/context-menu/shortcut-display.spec.js`, `tests/context-menu/dynamic-update.spec.js`
 
-Automated “context menu” tests only assert form-field state inside `options.html`; they never open Chrome’s context menu or inspect entries registered by `background.js`. Regressions in menu rebuild logic would go unnoticed.
+Automated "context menu" tests only assert form-field state inside `options.html`; they never open Chrome's context menu or inspect entries registered by `background.js`. Regressions in menu rebuild logic would go unnoticed.
 
 ### Root Cause
 

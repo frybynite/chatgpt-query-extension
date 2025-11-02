@@ -57,7 +57,7 @@ test.describe('Context Menu Tests - Shortcut Display', () => {
     // Save menu
     const saveBtn = optionsPage.locator('#save');
     await saveBtn.click();
-    await optionsPage.waitForTimeout(500);
+    await optionsPage.waitForSave();
 
     console.log('✓ Test menu with shortcuts created');
 
@@ -128,7 +128,7 @@ test.describe('Context Menu Tests - Shortcut Display', () => {
     // Save menu
     const saveBtn = optionsPage.locator('#save');
     await saveBtn.click();
-    await optionsPage.waitForTimeout(500);
+    await optionsPage.waitForSave();
 
     console.log('✓ Run All shortcut test menu created');
 
