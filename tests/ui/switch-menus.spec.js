@@ -259,6 +259,7 @@ test.describe('UI Tests - Switch Between Menus', () => {
 
     const addMenuBtn = optionsPage.locator('#add-menu');
     const menuNameInput = optionsPage.locator('#menuName');
+    const customGptUrlInput = optionsPage.locator('#customGptUrl');
     const autoSubmitCheckbox = optionsPage.locator('#autoSubmit');
     const saveBtn = optionsPage.locator('#save');
 
@@ -268,6 +269,9 @@ test.describe('UI Tests - Switch Between Menus', () => {
 
     await menuNameInput.clear();
     await menuNameInput.fill('Auto Submit ON');
+
+    await customGptUrlInput.clear();
+    await customGptUrlInput.fill('https://chatgpt.com/g/g-test123');
 
     await autoSubmitCheckbox.check();
     await saveBtn.click();
@@ -279,6 +283,9 @@ test.describe('UI Tests - Switch Between Menus', () => {
 
     await menuNameInput.clear();
     await menuNameInput.fill('Auto Submit OFF');
+
+    await customGptUrlInput.clear();
+    await customGptUrlInput.fill('https://chatgpt.com/g/g-test456');
 
     await autoSubmitCheckbox.uncheck();
     await saveBtn.click();
