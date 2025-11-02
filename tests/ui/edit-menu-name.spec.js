@@ -44,6 +44,9 @@ test.describe('UI Tests - Edit Menu Name', () => {
     const saveBtn = optionsPage.locator('#save');
     await saveBtn.click();
 
+    // Wait for save to complete and sidebar to update
+    await optionsPage.waitForSave();
+
     // Wait for sidebar to update with the new name
     const selectedMenuItem = optionsPage.locator('.menu-item.selected .menu-name');
     await expect(selectedMenuItem).toContainText(newName, { timeout: 5000 });
@@ -106,6 +109,9 @@ test.describe('UI Tests - Edit Menu Name', () => {
     // Save
     const saveBtn = optionsPage.locator('#save');
     await saveBtn.click();
+
+    // Wait for save to complete and sidebar to update
+    await optionsPage.waitForSave();
 
     // Wait for sidebar to update with the updated name
     const selectedMenuItem = optionsPage.locator('.menu-item.selected .menu-name');

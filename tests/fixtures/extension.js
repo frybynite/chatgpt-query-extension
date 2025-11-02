@@ -73,6 +73,26 @@ export const test = base.extend({
       await page.waitForTimeout(500);
     };
 
+    // Add helper method to wait for save operation to complete
+    // This waits for either success or warning banner to appear, indicating save completed and sidebar updated
+    // (Warning banner appears when menu has no actions, success banner appears otherwise)
+    page.waitForSave = async (timeout = 5000) => {
+      // Wait for either success or warning banner to be visible (not have 'hidden' class)
+      // Using a selector that matches either banner when visible
+      await page.waitForFunction(
+        () => {
+          const successBanner = document.getElementById('success-banner');
+          const warningBanner = document.getElementById('warning-banner');
+          return (successBanner && !successBanner.classList.contains('hidden')) ||
+                 (warningBanner && !warningBanner.classList.contains('hidden'));
+        },
+        { timeout }
+      );
+      
+      // Small additional wait to ensure DOM updates are complete
+      await page.waitForTimeout(100);
+    };
+
     await use(page);
   },
 });

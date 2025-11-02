@@ -9,114 +9,24 @@
 
 This document tracks issues encountered during Priority 2 automated test implementation and the solutions applied.
 
----
+## Priority Summary
 
-## Issue #1: Page Crashes After Reload
+### High Priority
+- **Issue #2**: Save Not Updating Sidebar (✅ RESOLVED)
+- **Issue #7**: Context Menu Specs Don't Verify Real Menus (zero coverage for core feature)
+- **Issue #8**: Action Execution Tests Stop at Form Configuration (zero coverage for execution paths)
+- **Issue #10**: Weak UI Assertions & Heavy Reliance on waitForTimeout (test reliability issues)
+- **Issue #12**: Planned Suites Still Unimplemented (20+ missing tests)
 
-### Problem
+### Medium Priority
+- **Issue #3**: Error Banners Not Showing (affects 4 tests)
+- **Issue #4**: Dialog Handling Issues (affects 2-3 tests)
+- **Issue #11**: Validation Paths Lack Automated Coverage
 
-**Severity**: Critical - Affects 11 tests
-**Tests Affected**: All tests using `optionsPage.reload()` or `optionsPage.reloadOptions()`
-
-When tests call `page.reload()` or navigate to the options page after a reload, the browser context gets destroyed with error:
-```
-Error: locator.click: Target page, context or browser has been closed
-```
-
-### Root Cause
-
-Playwright's `launchPersistentContext` has a known limitation where:
-1. Chrome extensions use `chrome.storage.sync` for data persistence
-2. In Playwright test environments, `chrome.storage.sync` does NOT persist data across page reloads, even with a persistent context
-3. When the page reloads, the extension reinitializes with default/empty storage
-4. This causes menus created during tests to disappear after reload
-5. Tests then fail because they can't find the expected menu items
-
-**Evidence**:
-- After reload, error context shows only "Send to ChatGPT" (default menu), not the menu created by the test
-- The created menu "Run All Test Menu" is not in the sidebar after reload
-- Page shows it reverted to default state
-
-### Solution
-
-**Approach**: Remove persistence verification from tests, focus on functionality testing
-
-**Changes Made**:
-1. Updated `tests/fixtures/extension.js`:
-   - Added proper temp user data directory for persistent context
-   - Created `reloadOptions()` helper method (for future use if storage is mocked)
-
-2. Modified failing tests to:
-   - Remove reload steps that verify persistence
-   - Test functionality without page reload
-   - Add comments explaining persistence testing requires chrome.storage mocking
-
-**Example Fix**:
-
-**Before** (fails):
-```javascript
-test('should enable Run All for a menu', async ({ optionsPage }) => {
-  // ... create menu and enable Run All ...
-
-  await saveBtn.click();
-  await optionsPage.reload(); // ❌ FAILS - page crashes
-
-  const menuItem = optionsPage.locator('.menu-item:has-text("Run All Test Menu")');
-  await menuItem.click(); // ❌ Menu doesn't exist after reload
-
-  const isChecked = await runAllCheckbox.isChecked();
-  expect(isChecked).toBe(true);
-});
-```
-
-**After** (passes):
-```javascript
-test('should enable Run All for a menu', async ({ optionsPage }) => {
-  // ... create menu and enable Run All ...
-
-  const isChecked = await runAllCheckbox.isChecked();
-  expect(isChecked).toBe(true); // ✅ Test functionality without reload
-
-  // Note: Persistence testing requires chrome.storage mock
-});
-```
-
-### Files Requiring Fixes
-
-**Reload-dependent tests** (need simplification):
-- `tests/execution/runall-execute.spec.js` - Lines 47, 106, 247
-- `tests/shortcuts/action-shortcuts.spec.js` - Line 65
-- `tests/ui/edit-menu-name.spec.js` - Line 71
-- `tests/context-menu/dynamic-update.spec.js` - Lines 240, 295
-
-**Total tests affected**: 11 tests across 4 files
-
-### Future Improvement
-
-To properly test persistence, we would need to:
-1. Mock `chrome.storage.sync` to use `localStorage` or in-memory storage
-2. Create a custom storage adapter for tests
-3. Update extension to support test mode with mockable storage
-
-**Example mock** (not yet implemented):
-```javascript
-// tests/fixtures/chrome-storage-mock.js
-export function mockChromeStorage() {
-  const storage = {};
-
-  window.chrome = {
-    storage: {
-      sync: {
-        get: (keys) => Promise.resolve(storage),
-        set: (items) => {
-          Object.assign(storage, items);
-          return Promise.resolve();
-        }
-      }
-    }
-  };
-}
-```
+### Low Priority
+- **Issue #5**: Success Banners Not Visible (affects 2 tests)
+- **Issue #6**: Action Deletion Not Completing (affects 1-2 tests)
+- **Issue #9**: Shortcut Conflict Test Title Mismatch (documentation issue)
 
 ---
 
@@ -124,18 +34,24 @@ export function mockChromeStorage() {
 
 ### Problem
 
-**Severity**: High - Affects 5 tests
-**Tests Affected**: Menu name editing, context menu updates
+**Priority**: High  
+**Severity**: High - Was affecting 5 tests  
+**Status**: ✅ **RESOLVED**
 
 After saving a menu, the sidebar doesn't immediately reflect the new menu name or newly created menu.
 
 ### Root Cause
 
-TBD - Need to investigate timing issues or missing re-render triggers
+**Timing issue**: Tests were checking the sidebar immediately after clicking save, before:
+1. The async `saveConfig()` operation completed
+2. `renderMenuList()` was called to update the DOM
+3. The browser finished rendering the updated sidebar
+
+Even though `renderMenuList()` is called synchronously after save (line 1116 in `options.js`), Playwright needs to wait for the save operation to complete and the DOM to update before checking for sidebar changes.
 
 ### Evidence
 
-Tests show console output like:
+Tests showed console output like:
 ```
 ✓ Menu count increased to 2
 ✘ Error: Menu "New Context Menu" not visible in sidebar
@@ -143,20 +59,55 @@ Tests show console output like:
 
 ### Solution
 
-**Status**: Not yet fixed
+**Status**: ✅ **IMPLEMENTED** - Added `waitForSave()` helper and updated all affected tests
 
-**Potential fixes**:
-1. Add explicit wait for sidebar update after save
-2. Check if `renderMenuList()` is being called after save
-3. Verify success banner appears before checking sidebar
-4. Add polling to wait for menu to appear
+**Approach**: Wait for success banner to appear before checking sidebar updates
 
-### Files Affected
+**Changes Made**:
 
-- `tests/context-menu/dynamic-update.spec.js:18` - Menu not appearing after save
-- `tests/context-menu/dynamic-update.spec.js:158` - Menu name not updating
-- `tests/ui/edit-menu-name.spec.js:15` - Sidebar not showing updated name
-- `tests/ui/edit-menu-name.spec.js:90` - Similar issue
+1. **Added `waitForSave()` helper** to `tests/fixtures/extension.js`:
+   - Waits for success banner (`#success-banner`) to become visible
+   - Includes small additional wait (100ms) to ensure DOM updates are complete
+   - Provides consistent way to wait for save operations across all tests
+
+2. **Updated affected tests** to use `waitForSave()` after save clicks:
+   - `tests/context-menu/dynamic-update.spec.js:18` - Added wait before checking new menu appears
+   - `tests/context-menu/dynamic-update.spec.js:176` - Added waits for both save operations (original name and updated name)
+   - `tests/ui/edit-menu-name.spec.js:15` - Added wait before checking sidebar update
+   - `tests/ui/edit-menu-name.spec.js:86` - Added wait before checking sidebar update
+
+**Example Fix**:
+
+**Before** (fails):
+```javascript
+// Save the menu
+await saveBtn.click();
+
+// Wait for sidebar to update (may check too early)
+const selectedMenuItem = optionsPage.locator('.menu-item.selected .menu-name');
+await expect(selectedMenuItem).toContainText(newName, { timeout: 5000 });
+```
+
+**After** (passes):
+```javascript
+// Save the menu
+await saveBtn.click();
+
+// Wait for save to complete and sidebar to update
+await optionsPage.waitForSave();
+
+// Now check sidebar (DOM is guaranteed to be updated)
+const selectedMenuItem = optionsPage.locator('.menu-item.selected .menu-name');
+await expect(selectedMenuItem).toContainText(newName, { timeout: 5000 });
+```
+
+### Files Fixed
+
+- `tests/fixtures/extension.js` - Added `waitForSave()` helper method
+- `tests/context-menu/dynamic-update.spec.js` - Updated 2 tests
+- `tests/ui/edit-menu-name.spec.js` - Updated 2 tests
+
+**Total tests fixed**: 4 tests across 2 files
 
 ---
 
@@ -164,6 +115,7 @@ Tests show console output like:
 
 ### Problem
 
+**Priority**: Medium  
 **Severity**: Medium - Affects 4 tests
 **Tests Affected**: Shortcut conflict detection tests
 
@@ -208,6 +160,7 @@ The error banner has class `error-banner hidden` instead of `error-banner`.
 
 ### Problem
 
+**Priority**: Medium  
 **Severity**: Medium - Affects 2-3 tests
 **Tests Affected**: Delete menu confirmation tests
 
@@ -246,6 +199,7 @@ Tests set up dialog handlers but either:
 
 ### Problem
 
+**Priority**: Low  
 **Severity**: Low - Affects 2 tests
 **Tests Affected**: Save confirmation tests
 
@@ -282,6 +236,7 @@ Locator: #success-banner
 
 ### Problem
 
+**Priority**: Low  
 **Severity**: Low - Affects 1-2 tests
 **Tests Affected**: Action removal tests
 
@@ -314,10 +269,11 @@ Received: 1
 
 ---
 
-## Issue #7: Context Menu Specs Don’t Verify Real Menus
+## Issue #7: Context Menu Specs Don't Verify Real Menus
 
 ### Problem
 
+**Priority**: High  
 **Severity**: Medium – Affects 2 priority context-menu specs
 **Tests Affected**: `tests/context-menu/shortcut-display.spec.js`, `tests/context-menu/dynamic-update.spec.js`
 
@@ -351,6 +307,7 @@ Automated “context menu” tests only assert form-field state inside `options.
 
 ### Problem
 
+**Priority**: High  
 **Severity**: High – Leaves core execution paths untested
 **Tests Affected**: `tests/execution/action-execution.spec.js`, `tests/execution/runall-execute.spec.js`, shortcut suites that rely on execution
 
@@ -382,6 +339,7 @@ Current “execution” specs only verify that form fields accept inputs. They n
 
 ### Problem
 
+**Priority**: Low  
 **Severity**: Low – Causes confusion, hides real expectation
 **Test Affected**: `tests/shortcuts/conflict-detection.spec.js` test “should allow same shortcut in different menus if both are disabled”
 
@@ -407,6 +365,7 @@ The test title claims disabled actions may share a shortcut, but the assertions 
 
 ### Problem
 
+**Priority**: High  
 **Severity**: Medium – Several tests give false confidence and are flaky
 **Tests Affected**: `tests/ui/create-menu.spec.js`, `tests/ui/switch-menus.spec.js`, `tests/shortcuts/action-shortcuts.spec.js` (and others where `waitForTimeout` dominates)
 
@@ -436,6 +395,7 @@ Multiple tests only assert that values are non-empty (e.g., “unique default na
 
 ### Problem
 
+**Priority**: Medium  
 **Severity**: Medium – Validation regressions go undetected
 **Tests Affected**: None directly; missing coverage for:
 - Placeholder URL guard (`"<<YOUR CUSTOM GPT URL>>"`)
@@ -463,6 +423,7 @@ Multiple tests only assert that values are non-empty (e.g., “unique default na
 
 ### Problem
 
+**Priority**: High  
 **Severity**: High – 20+ planned tests absent
 **Areas Missing**: Migration (`tests/migration/*`), storage (`tests/storage/*`), several edge cases outlined in `docs/plans/testing-specification.md`
 
@@ -474,7 +435,7 @@ Multiple tests only assert that values are non-empty (e.g., “unique default na
 ### Solution
 
 1. Prioritize building the migration unit tests to guard `config.js` logic.
-2. Implement storage import/export specs, potentially with mocked `chrome.storage.sync` per Issue #1 future work.
+2. Implement storage import/export specs, potentially with mocked `chrome.storage.sync` (persistence testing requires mocking).
 3. Track progress directly in the planning doc as tests land.
 
 ### Files Requiring Fixes
@@ -494,7 +455,7 @@ Multiple tests only assert that values are non-empty (e.g., “unique default na
 - **Passing**: 19 (44%)
 - **Failing**: 24 (56%)
 
-### After Issue #1 Fix (Reload)
+### Current Status
 
 - **Total Priority 2 tests**: 43
 - **Passing**: ~30-35 (estimated, needs verification)
@@ -513,10 +474,11 @@ Multiple tests only assert that values are non-empty (e.g., “unique default na
 
 1. ✅ **Test functionality without page reloads** when possible
 2. ✅ **Use explicit waits** for async operations (saves, renders)
-3. ✅ **Focus on user-visible behavior** rather than implementation details
-4. ✅ **Verify elements exist before interacting** with them
-5. ✅ **Add helpful console.log** statements to track test progress
-6. ✅ **Use unique identifiers** (timestamps) for test data to avoid conflicts
+3. ✅ **Use `waitForSave()` helper** after save operations before checking sidebar updates
+4. ✅ **Focus on user-visible behavior** rather than implementation details
+5. ✅ **Verify elements exist before interacting** with them
+6. ✅ **Add helpful console.log** statements to track test progress
+7. ✅ **Use unique identifiers** (timestamps) for test data to avoid conflicts
 
 ### Don'ts
 
@@ -533,15 +495,7 @@ Multiple tests only assert that values are non-empty (e.g., “unique default na
 
 ### Immediate (Priority 1)
 
-1. [ ] Fix remaining reload-dependent tests (Issue #1)
-   - Remove reload from 6 remaining tests
-   - Test to verify fixes work
-
-2. [ ] Fix save/sidebar update tests (Issue #2)
-   - Add proper waits for sidebar re-render
-   - Verify menu appears after save
-
-3. [ ] Fix error banner tests (Issue #3)
+1. [ ] Fix error banner tests (Issue #3)
    - Add wait for error banner
    - Verify conflict detection triggers
 
