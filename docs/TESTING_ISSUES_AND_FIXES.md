@@ -314,6 +314,178 @@ Received: 1
 
 ---
 
+## Issue #7: Context Menu Specs Don’t Verify Real Menus
+
+### Problem
+
+**Severity**: Medium – Affects 2 priority context-menu specs
+**Tests Affected**: `tests/context-menu/shortcut-display.spec.js`, `tests/context-menu/dynamic-update.spec.js`
+
+Automated “context menu” tests only assert form-field state inside `options.html`; they never open Chrome’s context menu or inspect entries registered by `background.js`. Regressions in menu rebuild logic would go unnoticed.
+
+### Root Cause
+
+- Tests interact solely with the options page DOM
+- No instrumentation for `chrome.contextMenus` events
+- Background service worker never exercised
+
+### Solution
+
+**Plan**:
+
+1. Introduce a helper that listens for `chrome.contextMenus.onShown` and captures the rendered hierarchy.
+2. Update the specs to trigger the menu (e.g., using `page.evaluate` to synthesize a right-click with selected text) and assert menu titles/actions/Run All entries.
+3. Keep the existing UI assertions as supplemental checks.
+
+**Blocked by**: Need lightweight mocking or plumbing to expose context-menu state from the service worker in Playwright.
+
+### Files Requiring Fixes
+
+- `tests/context-menu/shortcut-display.spec.js`
+- `tests/context-menu/dynamic-update.spec.js`
+- (Potential test helper) `tests/fixtures/extension.js`
+
+---
+
+## Issue #8: Action Execution Tests Stop at Form Configuration
+
+### Problem
+
+**Severity**: High – Leaves core execution paths untested
+**Tests Affected**: `tests/execution/action-execution.spec.js`, `tests/execution/runall-execute.spec.js`, shortcut suites that rely on execution
+
+Current “execution” specs only verify that form fields accept inputs. They never trigger menu actions, keyboard shortcuts, or Run All, so `background.js`’s injection logic (`executeAction`, `runAllActions`, shortcut message handling) has zero coverage.
+
+### Root Cause
+
+- Tests focus on options-page configuration because injecting into chatgpt.com is non-trivial
+- No harness to observe new tabs, prompt payloads, or auto-submit retries
+
+### Solution
+
+1. Add a mock or lightweight page in place of chatgpt.com that records received prompts and submission state.
+2. Extend fixtures to capture messages sent from the background worker when actions fire.
+3. Write new tests that:
+   - Trigger context-menu actions
+   - Trigger keyboard shortcuts (`EXECUTE_SHORTCUT`)
+   - Assert prompts, auto-submit flags, retry behavior
+
+### Files Requiring Fixes
+
+- `tests/execution/action-execution.spec.js`
+- `tests/execution/runall-execute.spec.js`
+- `tests/shortcuts/*.spec.js` (add execution assertions once harness exists)
+
+---
+
+## Issue #9: Shortcut Conflict Test Title Mismatch
+
+### Problem
+
+**Severity**: Low – Causes confusion, hides real expectation
+**Test Affected**: `tests/shortcuts/conflict-detection.spec.js` test “should allow same shortcut in different menus if both are disabled”
+
+The test title claims disabled actions may share a shortcut, but the assertions still expect a conflict banner.
+
+### Root Cause
+
+- Title carried over from spec document
+- Actual product behavior (disabled actions still register shortcuts) contradicts description
+
+### Solution
+
+1. Rename the test to reflect expected behavior (e.g., “should still flag conflict when disabled actions share shortcut”).
+2. Update surrounding comments to avoid future misinterpretation.
+
+### Files Requiring Fixes
+
+- `tests/shortcuts/conflict-detection.spec.js`
+
+---
+
+## Issue #10: Weak UI Assertions & Heavy Reliance on waitForTimeout
+
+### Problem
+
+**Severity**: Medium – Several tests give false confidence and are flaky
+**Tests Affected**: `tests/ui/create-menu.spec.js`, `tests/ui/switch-menus.spec.js`, `tests/shortcuts/action-shortcuts.spec.js` (and others where `waitForTimeout` dominates)
+
+Multiple tests only assert that values are non-empty (e.g., “unique default name” checks) and depend on arbitrary `waitForTimeout` calls instead of waiting for specific elements or events.
+
+### Root Cause
+
+- Initial triage focused on getting green runs under tight deadlines
+- No shared wait helpers or deterministic UI signals
+
+### Solution
+
+1. Replace `waitForTimeout` with `expect`-based waits (`toBeVisible`, `toHaveText`, etc.).
+2. Strengthen assertions to match acceptance criteria (e.g., verify menu names differ, dirty indicators appear, selection persists).
+3. Introduce utility methods in fixtures for common waits and interactions.
+
+### Files Requiring Fixes
+
+- `tests/ui/create-menu.spec.js`
+- `tests/ui/switch-menus.spec.js`
+- `tests/shortcuts/action-shortcuts.spec.js`
+- (General clean-up) any spec using repeated `waitForTimeout` without condition
+
+---
+
+## Issue #11: Validation Paths Lack Automated Coverage
+
+### Problem
+
+**Severity**: Medium – Validation regressions go undetected
+**Tests Affected**: None directly; missing coverage for:
+- Placeholder URL guard (`"<<YOUR CUSTOM GPT URL>>"`)
+- Duplicate shortcut errors surfaced via `showError`
+- 10-menu limit enforcement and disabled add button
+
+### Root Cause
+
+- Tests rarely attempt invalid saves because persistence is hard to verify
+- No dedicated negative tests following V3 validation contract
+
+### Solution
+
+1. Create targeted negative tests that attempt to save invalid configs and assert error banners/disabled UI state.
+2. Link these tests to existing validation logic in `options.js`.
+
+### Files Requiring Fixes
+
+- New specs under `tests/ui` or `tests/edge-cases`
+- Potential helper updates in `tests/fixtures/extension.js`
+
+---
+
+## Issue #12: Planned Suites Still Unimplemented
+
+### Problem
+
+**Severity**: High – 20+ planned tests absent
+**Areas Missing**: Migration (`tests/migration/*`), storage (`tests/storage/*`), several edge cases outlined in `docs/plans/testing-specification.md`
+
+### Root Cause
+
+- Feature shipped before Priority 2 test plan was executed
+- No stubs or placeholder files were created, so gaps are easy to miss
+
+### Solution
+
+1. Prioritize building the migration unit tests to guard `config.js` logic.
+2. Implement storage import/export specs, potentially with mocked `chrome.storage.sync` per Issue #1 future work.
+3. Track progress directly in the planning doc as tests land.
+
+### Files Requiring Fixes
+
+- `tests/migration/*.spec.js` (new)
+- `tests/storage/*.spec.js` (new)
+- `tests/edge-cases/*.spec.js` (remaining cases)
+- Update `docs/plans/testing-specification.md` statuses once implemented
+
+---
+
 ## Test Statistics
 
 ### Before Fixes
