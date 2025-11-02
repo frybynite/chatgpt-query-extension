@@ -26,6 +26,23 @@
     <!-- Success banner (hidden by default) -->
     <div id="success-banner" class="success-banner hidden"></div>
 
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 class="modal-title" id="modal-title"></h3>
+          <button type="button" class="modal-close" id="modal-close" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+          <p id="modal-message"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="modal-cancel" style="display: none;">Cancel</button>
+          <button type="button" class="btn-primary" id="modal-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Content: Sidebar + Detail Panel -->
     <div class="main-content">
       <!-- Left Sidebar: Menu List -->
