@@ -78,3 +78,18 @@ export const test = base.extend({
 });
 
 export { expect } from '@playwright/test';
+
+// Helper to check if shortcut contains modifier keys (works on both Mac and PC)
+export function hasModifierKey(shortcut, modifier) {
+  if (!shortcut) return false;
+
+  const modifierMap = {
+    'Ctrl': ['Ctrl', '⌃'],
+    'Alt': ['Alt', '⌥'],
+    'Shift': ['Shift', '⇧'],
+    'Meta': ['Meta', '⌘']
+  };
+
+  const variants = modifierMap[modifier] || [modifier];
+  return variants.some(variant => shortcut.includes(variant));
+}

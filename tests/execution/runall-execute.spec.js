@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures/extension.js';
+import { test, expect, hasModifierKey } from '../fixtures/extension.js';
 
 /**
  * TEST-AE06: Run All Executes All Menu Actions
@@ -80,8 +80,8 @@ test.describe('Action Execution Tests - Run All', () => {
     // Verify shortcut was captured
     const runAllShortcutInput = optionsPage.locator('#runAllShortcut');
     const shortcutValue = await runAllShortcutInput.inputValue();
-    expect(shortcutValue).toContain('Ctrl');
-    expect(shortcutValue).toContain('Shift');
+    expect(hasModifierKey(shortcutValue, 'Ctrl')).toBe(true);
+    expect(hasModifierKey(shortcutValue, 'Shift')).toBe(true);
     expect(shortcutValue).toContain('R');
     console.log(`✓ Run All shortcut assigned: ${shortcutValue}`);
 

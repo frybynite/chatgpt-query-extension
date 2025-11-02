@@ -162,7 +162,8 @@ function validateConfig(config) {
         errors.push(`Action ${index + 1}: Prompt is required`);
       }
       if (action.shortcut && action.shortcut.trim()) {
-        const validShortcutPattern = /^(Ctrl|Alt|Shift|Meta)(\+(Ctrl|Alt|Shift|Meta))*\+.+$/;
+        // Accept both PC key names and Mac symbols
+        const validShortcutPattern = /^(Ctrl|Alt|Shift|Meta|⌃|⌥|⇧|⌘)(\+(Ctrl|Alt|Shift|Meta|⌃|⌥|⇧|⌘))*\+.+$/;
         if (!validShortcutPattern.test(action.shortcut)) {
           errors.push(`Action ${index + 1}: Invalid shortcut format (must include modifier keys)`);
         }
@@ -266,7 +267,8 @@ function validateV3Config(config) {
 
     // Run All shortcut validation (if enabled and configured)
     if (menu.runAllEnabled && menu.runAllShortcut?.trim()) {
-      const validShortcutPattern = /^(Ctrl|Alt|Shift|Meta)(\+(Ctrl|Alt|Shift|Meta))*\+.+$/;
+      // Accept both PC key names and Mac symbols
+      const validShortcutPattern = /^(Ctrl|Alt|Shift|Meta|⌃|⌥|⇧|⌘)(\+(Ctrl|Alt|Shift|Meta|⌃|⌥|⇧|⌘))*\+.+$/;
       if (!validShortcutPattern.test(menu.runAllShortcut)) {
         errors.push(`${menuLabel}: Invalid Run All shortcut format (must include modifier keys)`);
       } else {
@@ -303,7 +305,8 @@ function validateV3Config(config) {
 
         // Shortcut validation
         if (action.shortcut && action.shortcut.trim()) {
-          const validShortcutPattern = /^(Ctrl|Alt|Shift|Meta)(\+(Ctrl|Alt|Shift|Meta))*\+.+$/;
+          // Accept both PC key names and Mac symbols
+          const validShortcutPattern = /^(Ctrl|Alt|Shift|Meta|⌃|⌥|⇧|⌘)(\+(Ctrl|Alt|Shift|Meta|⌃|⌥|⇧|⌘))*\+.+$/;
           if (!validShortcutPattern.test(action.shortcut)) {
             errors.push(`${actionLabel}: Invalid shortcut format (must include modifier keys)`);
           } else if (action.enabled) {
