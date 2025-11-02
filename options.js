@@ -36,6 +36,31 @@ const warningBanner = document.getElementById('warning-banner');
 const successBanner = document.getElementById('success-banner');
 const reloadReminder = document.getElementById('reload-reminder');
 
+// ====== PLATFORM DETECTION ======
+const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+// ====== SHORTCUT CONVERSION ======
+// Convert shortcuts to platform-appropriate display format
+function convertShortcutForDisplay(shortcut) {
+  if (!shortcut) return '';
+
+  if (isMac) {
+    // Convert PC key names to Mac symbols
+    return shortcut
+      .replace(/Ctrl/g, '⌃')
+      .replace(/Alt/g, '⌥')
+      .replace(/Shift/g, '⇧')
+      .replace(/Meta/g, '⌘');
+  } else {
+    // Convert Mac symbols to PC key names
+    return shortcut
+      .replace(/⌃/g, 'Ctrl')
+      .replace(/⌥/g, 'Alt')
+      .replace(/⇧/g, 'Shift')
+      .replace(/⌘/g, 'Meta');
+  }
+}
+
 // ====== STATE ======
 let currentConfig = null;
 let selectedMenuId = null;
@@ -191,7 +216,7 @@ function loadMenuDetails(menuId) {
   customGptUrlInput.value = menu.customGptUrl;
   autoSubmitCheckbox.checked = menu.autoSubmit;
   runAllEnabledCheckbox.checked = menu.runAllEnabled;
-  runAllShortcutInput.value = menu.runAllShortcut || '';
+  runAllShortcutInput.value = convertShortcutForDisplay(menu.runAllShortcut || '');
 
   // Show/hide Run All shortcut based on checkbox
   toggleRunAllShortcutVisibility();
@@ -481,7 +506,7 @@ function createActionElement(action, index) {
 
   titleInput.value = action.title;
   promptInput.value = action.prompt;
-  shortcutInput.value = action.shortcut || '';
+  shortcutInput.value = convertShortcutForDisplay(action.shortcut || '');
   enabledCheckbox.checked = action.enabled;
 
   attachActionEventListeners(actionItem);
@@ -677,15 +702,19 @@ function captureShortcut(shortcutInput) {
     }
 
     const parts = [];
-    if (e.ctrlKey) parts.push('Ctrl');
-    if (e.altKey) parts.push('Alt');
-    if (e.shiftKey) parts.push('Shift');
-    if (e.metaKey) parts.push('Meta');
+    // Use Mac-friendly names on macOS
+    if (e.ctrlKey) parts.push(isMac ? '⌃' : 'Ctrl');
+    if (e.altKey) parts.push(isMac ? '⌥' : 'Alt');
+    if (e.shiftKey) parts.push(isMac ? '⇧' : 'Shift');
+    if (e.metaKey) parts.push(isMac ? '⌘' : 'Meta');
 
     if (parts.length === 0) {
       shortcutInput.value = '';
       shortcutInput.classList.remove('capturing');
-      showError('Shortcut must include at least one modifier key (Ctrl, Alt, Shift, or Meta/Cmd)');
+      const modifierHint = isMac
+        ? 'modifier key (⌃ Control, ⌥ Option, ⇧ Shift, or ⌘ Command)'
+        : 'modifier key (Ctrl, Alt, Shift, or Meta/Cmd)';
+      showError(`Shortcut must include at least one ${modifierHint}`);
       document.removeEventListener('keydown', handleKeyDown, true);
       return;
     }

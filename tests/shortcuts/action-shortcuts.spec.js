@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures/extension.js';
+import { test, expect, hasModifierKey } from '../fixtures/extension.js';
 
 /**
  * TEST-SH01 & TEST-SH02: Action Shortcuts for Multiple Menus
@@ -51,8 +51,8 @@ test.describe('Shortcut Tests - Action Shortcuts', () => {
     // Verify shortcut was captured
     const shortcutInputs = optionsPage.locator('.action-item .action-shortcut');
     const shortcutValue = await shortcutInputs.last().inputValue();
-    expect(shortcutValue).toContain('Ctrl');
-    expect(shortcutValue).toContain('Shift');
+    expect(hasModifierKey(shortcutValue, 'Ctrl')).toBe(true);
+    expect(hasModifierKey(shortcutValue, 'Shift')).toBe(true);
     expect(shortcutValue).toContain('S');
     console.log(`✓ Shortcut captured for Menu 1: ${shortcutValue}`);
 
@@ -102,7 +102,7 @@ test.describe('Shortcut Tests - Action Shortcuts', () => {
     // Verify shortcut was captured
     const shortcutInputs = optionsPage.locator('.action-item .action-shortcut');
     const shortcutValue = await shortcutInputs.last().inputValue();
-    expect(shortcutValue).toContain('Ctrl');
+    expect(hasModifierKey(shortcutValue, 'Ctrl')).toBe(true);
     expect(shortcutValue).toContain('T');
     console.log(`✓ Shortcut captured for Menu 2: ${shortcutValue}`);
 
@@ -168,8 +168,8 @@ test.describe('Shortcut Tests - Action Shortcuts', () => {
     const shortcut1 = await shortcutInputs.nth(0).inputValue();
     const shortcut2 = await shortcutInputs.nth(1).inputValue();
 
-    expect(shortcut1).toContain('Ctrl');
-    expect(shortcut2).toContain('Alt');
+    expect(hasModifierKey(shortcut1, 'Ctrl')).toBe(true);
+    expect(hasModifierKey(shortcut2, 'Alt')).toBe(true);
     console.log(`✓ Different modifiers allowed: ${shortcut1} and ${shortcut2}`);
   });
 

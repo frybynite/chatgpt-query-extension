@@ -27,6 +27,31 @@ chrome.runtime.onInstalled.addListener(async () => {
   await rebuildContextMenus();
 });
 
+// ====== SHORTCUT FORMATTING ======
+// Format shortcut string for display with platform-appropriate symbols
+function formatShortcutForDisplay(shortcut) {
+  if (!shortcut) return '';
+
+  // Detect Mac based on user agent in service worker context
+  const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+
+  if (isMac) {
+    // Convert PC key names to Mac symbols
+    return shortcut
+      .replace(/Ctrl/g, '⌃')
+      .replace(/Alt/g, '⌥')
+      .replace(/Shift/g, '⇧')
+      .replace(/Meta/g, '⌘');
+  } else {
+    // Convert Mac symbols to PC key names
+    return shortcut
+      .replace(/⌃/g, 'Ctrl')
+      .replace(/⌥/g, 'Alt')
+      .replace(/⇧/g, 'Shift')
+      .replace(/⌘/g, 'Meta');
+  }
+}
+
 // ====== CONTEXT MENU MANAGEMENT ======
 let isRebuildingMenus = false;
 
@@ -79,20 +104,30 @@ async function rebuildContextMenus() {
 
         // Create menu items for each enabled action
         enabledActions.forEach(action => {
+          // Format title with shortcut if present
+          const title = action.shortcut
+            ? `${action.title}\t${formatShortcutForDisplay(action.shortcut)}`
+            : action.title;
+
           createMenuItem({
             id: `${menu.id}__${action.id}`,
             parentId: menu.id,
-            title: action.title,
+            title: title,
             contexts: ['selection']
           });
         });
 
         // Create "Run All" for this menu if enabled and has multiple actions
         if (menu.runAllEnabled && enabledActions.length > 1) {
+          // Format title with shortcut if present
+          const runAllTitle = menu.runAllShortcut
+            ? `Run All Actions\t${formatShortcutForDisplay(menu.runAllShortcut)}`
+            : 'Run All Actions';
+
           createMenuItem({
             id: `${menu.id}__runAll`,
             parentId: menu.id,
-            title: 'Run All Actions',
+            title: runAllTitle,
             contexts: ['selection']
           });
         }
@@ -116,19 +151,29 @@ async function rebuildContextMenus() {
         .sort((a, b) => a.order - b.order);
 
       enabledActions.forEach(action => {
+        // Format title with shortcut if present
+        const title = action.shortcut
+          ? `${action.title}\t${formatShortcutForDisplay(action.shortcut)}`
+          : action.title;
+
         createMenuItem({
           id: action.id,
           parentId: 'jobSearchRoot',
-          title: action.title,
+          title: title,
           contexts: ['selection']
         });
       });
 
       if (config.globalSettings?.runAllEnabled && enabledActions.length > 1) {
+        // Format title with shortcut if present
+        const runAllTitle = config.globalSettings?.runAllShortcut
+          ? `Run All Actions\t${formatShortcutForDisplay(config.globalSettings.runAllShortcut)}`
+          : 'Run All Actions';
+
         createMenuItem({
           id: 'runAll',
           parentId: 'jobSearchRoot',
-          title: 'Run All Actions',
+          title: runAllTitle,
           contexts: ['selection']
         });
       }
