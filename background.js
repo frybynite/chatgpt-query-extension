@@ -232,15 +232,23 @@ chrome.storage.onChanged.addListener(async (changes, areaName) => {
 
 // ====== CONTEXT MENU CLICK HANDLER ======
 chrome.contextMenus.onClicked.addListener(async (info) => {
-  if (!info.selectionText) return;
+  console.log('[Background] Context menu clicked:', info.menuItemId, 'selection:', info.selectionText?.substring(0, 50));
+
+  if (!info.selectionText) {
+    console.warn('[Background] No selection text, ignoring click');
+    return;
+  }
 
   const config = await loadConfig();
   const menuItemId = info.menuItemId;
+  console.log('[Background] Config loaded, processing menuItemId:', menuItemId);
 
   // V3: Multiple menus (parse namespace menuId__actionId)
   if (config.menus && Array.isArray(config.menus)) {
+    console.log('[Background] Using V3 config with', config.menus.length, 'menus');
     // Parse menuItemId to extract menuId and actionId
     const parts = menuItemId.split('__');
+    console.log('[Background] Parsed menuItemId into parts:', parts);
 
     if (parts.length === 2) {
       const [menuId, actionId] = parts;
@@ -251,9 +259,11 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
         console.warn('[Background] Menu not found:', menuId);
         return;
       }
+      console.log('[Background] Found menu:', menu.name);
 
       // Handle "Run All" for this menu
       if (actionId === 'runAll') {
+        console.log('[Background] Executing Run All for menu:', menu.name);
         await runAllActions(info.selectionText.trim(), menu, config);
         return;
       }
@@ -264,8 +274,10 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
         console.warn('[Background] Action not found:', actionId, 'in menu:', menu.name);
         return;
       }
+      console.log('[Background] Found action:', action.title);
 
       // Execute single action with menu's settings
+      console.log('[Background] Calling executeAction for:', action.title);
       await executeAction(action, info.selectionText.trim(), menu, config);
     } else {
       console.warn('[Background] Invalid menu item ID format:', menuItemId);
@@ -296,18 +308,26 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
 // ====== SINGLE ACTION EXECUTION (V3) ======
 async function executeAction(action, selectionText, menu, config) {
   const prompt = `${action.prompt} ${selectionText}`;
+  console.log('[Background] executeAction called for:', action.title);
+  console.log('[Background] Prompt:', prompt.substring(0, 100));
+  console.log('[Background] Menu URL:', menu.customGptUrl);
+  console.log('[Background] Auto-submit:', menu.autoSubmit);
 
   try {
+    console.log('[Background] Opening ChatGPT tab...');
     const tabId = await openOrFocusGptTab(menu.customGptUrl, config.globalSettings.clearContext);
+    console.log('[Background] Tab opened with ID:', tabId);
 
     const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     // Attempt #1
+    console.log('[Background] Attempting to inject prompt (attempt #1)...');
     const ok1 = await tryInjectWithTiming(tabId, prompt, {
       label: `${action.id}-attempt#1`,
       autoSubmit: menu.autoSubmit,
       reqId
     });
+    console.log('[Background] Injection attempt #1 result:', ok1);
 
     // Retry if needed
     if (!ok1) {
@@ -480,11 +500,22 @@ async function runAllActionsV2(selectionText, config) {
 
 // ====== TAB/TITLE HELPERS ======
 async function openOrFocusGptTab(customGptUrl, clearContext) {
+  console.log('[Background] openOrFocusGptTab called with URL:', customGptUrl);
   const created = await chrome.tabs.create({
     url: `${customGptUrl}?fresh=${Date.now()}`,
     active: true
   });
-  return created.id;
+  console.log('[Background] Tab created with ID:', created.id);
+
+  // Load config to get gptTitleMatch
+  const config = await loadConfig();
+  const titleMatch = config.globalSettings?.gptTitleMatch || 'ChatGPT';
+  console.log('[Background] Waiting for title to match:', titleMatch);
+
+  // Wait for tab to be ready before returning
+  const result = await waitForTitleMatch(created.id, titleMatch, 20000);
+  console.log('[Background] Tab ready with ID:', result);
+  return result;
 }
 
 async function openOrFocusGptTabV2(config, { clear = false } = {}) {
@@ -686,14 +717,12 @@ function createModalOverlayFunction() {
 
 // ====== INJECTION (returns true if inserted/submitted, else false) ======
 async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = false, reqId = "" } = {}) {
+  console.log('[Background] tryInjectWithTiming called:', { tabId, label, autoSubmit, reqId, promptLength: prompt.length });
   try {
-    const modalFnString = createModalOverlayFunction().toString();
+    console.log('[Background] Executing script in tab', tabId);
     const results = await chrome.scripting.executeScript({
       target: { tabId },
-      func: (text, label, shouldSubmit, requestId, modalFnStr) => {
-        // Create modal function from string
-        const showModalOverlay = new Function('return ' + modalFnStr)();
-        
+      func: (text, label, shouldSubmit, requestId) => {
         console.log("[JobSearchExt]", label, "inject start (debounced)", { requestId, shouldSubmit });
 
         // ---- page-level debounce: if same reqId already handled in last 10s, skip ----
@@ -854,22 +883,24 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
             else if (++tries >= MAX_TRIES_LOCAL) {
               clearInterval(timer);
               console.warn("[JobSearchExt]", label, "editor not found — giving up");
-              showModalOverlay("Could not auto-insert text. Please paste manually.");
+              alert("Could not auto-insert text. Please paste manually.");
               resolve({ inserted: false, submitted: false, skipped: false });
             }
           }, INTERVAL);
         });
       },
-      args: [prompt, label, autoSubmit, reqId, modalFnString],
+      args: [prompt, label, autoSubmit, reqId],
       world: "MAIN" // ensure we're in the page's main world
     });
 
     // Normalize return (MV3 returns array of {result})
     const res = Array.isArray(results) && results[0] && results[0].result;
+    console.log('[Background] Script execution result:', res);
     const ok = !!(res && (res.inserted || res.submitted) && !res.skipped);
+    console.log('[Background] Returning success status:', ok);
     return ok;
   } catch (e) {
-    console.warn("[JobSearchExt] executeScript failed:", e);
+    console.error("[Background] executeScript failed:", e);
     try {
       await chrome.tabs.update(tabId, {
         url: `https://chatgpt.com/?q=${encodeURIComponent("Could not auto-insert text. Please paste below.")}`
