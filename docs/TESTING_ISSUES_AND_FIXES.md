@@ -323,7 +323,48 @@ Create targeted negative tests that attempt to save invalid configs and assert e
 
 ---
 
-### 📋 Issue #10: Migration Tests Not Implemented
+### 📋 Issue #10: V2 to V3 Shortcut Conversion on Mac
+
+**Priority:** Medium
+**Severity:** Medium - Tooltips don't display correctly for imported shortcuts
+**Status:** ⚠️ **IN PROGRESS**
+
+**Problem:**
+When importing V2 configuration files on Mac, shortcuts are stored with PC key names (Alt, Meta, Ctrl, Shift) instead of Mac unicode symbols (⌥, ⌘, ⌃, ⇧). While the shortcuts display correctly in input fields and trigger correctly, the tooltips still show the PC key names instead of converting them to readable words.
+
+**Requirements:**
+When importing V2 configs on Mac:
+1. ✅ Shortcuts must display correctly in input fields (unicode symbols)
+2. ✅ Shortcuts must trigger correctly when pressed
+3. ❌ Tooltips must show proper word format (e.g., "Option + Shift + J" not "Alt + Shift + J")
+
+**Current Status:**
+- ✅ Display in fields: Working (shows ⌥+⇧+J)
+- ✅ Shortcut triggering: Working (Alt+Shift+J triggers correctly)
+- ❌ Tooltip display: Broken (shows "Alt + Shift + J" instead of "Option + Shift + J")
+
+**Root Cause:**
+The `convertShortcutToWords()` function in `options.js` handles both Mac symbols and PC key names, but imported V2 shortcuts are stored with PC names. When the tooltip is generated, it receives the raw stored value (PC names) instead of the Mac symbols.
+
+**Solution Needed:**
+Ensure that when shortcuts are imported from V2 format:
+1. They are converted to platform-appropriate display format (Mac symbols on Mac)
+2. The converted format is stored, not the original PC format
+3. Tooltips receive the converted format and display correct words
+
+**Files Affected:**
+- `config.js` - V2 to V3 migration logic
+- `options.js` - Shortcut display and tooltip generation
+
+**Test Case:**
+1. Import a V2 config with shortcut "Alt+Shift+J" on a Mac
+2. Verify input field shows "⌥+⇧+J"
+3. Verify pressing Option+Shift+J triggers the action
+4. Verify tooltip shows "Option + Shift + J" (not "Alt + Shift + J")
+
+---
+
+### 📋 Issue #11: Migration Tests Not Implemented
 
 **Priority:** High
 **Severity:** Medium - Migration logic untested

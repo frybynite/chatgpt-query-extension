@@ -82,26 +82,27 @@ function convertShortcutToWords(shortcut) {
   if (!shortcut) return '';
 
   const parts = shortcut.split('+');
-  
+
   const convertedParts = parts.map(part => {
     const trimmed = part.trim();
-    
+
     // Handle Mac symbols first (these can appear regardless of platform if saved on Mac)
     if (trimmed === '⌃') return 'Control';
     if (trimmed === '⌥') return 'Option';
     if (trimmed === '⇧') return 'Shift';
     if (trimmed === '⌘') return 'Command';
-    
-    // Handle Windows abbreviations (these can appear regardless of platform if saved on Windows)
+
+    // Handle PC abbreviations - convert to platform-appropriate names
+    // On Mac, show Mac terminology even for PC shortcuts (for V2 imports)
     if (trimmed === 'Ctrl') return 'Control';
-    if (trimmed === 'Alt') return 'Alt';
+    if (trimmed === 'Alt') return isMac ? 'Option' : 'Alt';
     if (trimmed === 'Shift') return 'Shift';
-    if (trimmed === 'Meta') return 'Windows';
-    
+    if (trimmed === 'Meta') return isMac ? 'Command' : 'Windows';
+
     // Return as-is for regular keys (letters, numbers, arrow keys, etc.)
     return trimmed;
   });
-  
+
   return convertedParts.join(' + ');
 }
 
