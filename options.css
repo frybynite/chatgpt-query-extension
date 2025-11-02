@@ -387,6 +387,11 @@ h2 {
   transition: border-color 0.2s;
 }
 
+#menuName {
+  width: 50ch;
+  max-width: 100%;
+}
+
 .form-group textarea {
   resize: vertical;
   min-height: 48px;

@@ -104,30 +104,22 @@ async function rebuildContextMenus() {
 
         // Create menu items for each enabled action
         enabledActions.forEach(action => {
-          // Format title with shortcut if present
-          const title = action.shortcut
-            ? `${action.title}\t${formatShortcutForDisplay(action.shortcut)}`
-            : action.title;
-
+          // Don't display shortcuts in context menu (they still work via keyboard shortcuts)
           createMenuItem({
             id: `${menu.id}__${action.id}`,
             parentId: menu.id,
-            title: title,
+            title: action.title,
             contexts: ['selection']
           });
         });
 
         // Create "Run All" for this menu if enabled and has multiple actions
         if (menu.runAllEnabled && enabledActions.length > 1) {
-          // Format title with shortcut if present
-          const runAllTitle = menu.runAllShortcut
-            ? `Run All Actions\t${formatShortcutForDisplay(menu.runAllShortcut)}`
-            : 'Run All Actions';
-
+          // Don't display shortcuts in context menu (they still work via keyboard shortcuts)
           createMenuItem({
             id: `${menu.id}__runAll`,
             parentId: menu.id,
-            title: runAllTitle,
+            title: 'Run All Actions',
             contexts: ['selection']
           });
         }
@@ -151,29 +143,21 @@ async function rebuildContextMenus() {
         .sort((a, b) => a.order - b.order);
 
       enabledActions.forEach(action => {
-        // Format title with shortcut if present
-        const title = action.shortcut
-          ? `${action.title}\t${formatShortcutForDisplay(action.shortcut)}`
-          : action.title;
-
+        // Don't display shortcuts in context menu (they still work via keyboard shortcuts)
         createMenuItem({
           id: action.id,
           parentId: 'jobSearchRoot',
-          title: title,
+          title: action.title,
           contexts: ['selection']
         });
       });
 
       if (config.globalSettings?.runAllEnabled && enabledActions.length > 1) {
-        // Format title with shortcut if present
-        const runAllTitle = config.globalSettings?.runAllShortcut
-          ? `Run All Actions\t${formatShortcutForDisplay(config.globalSettings.runAllShortcut)}`
-          : 'Run All Actions';
-
+        // Don't display shortcuts in context menu (they still work via keyboard shortcuts)
         createMenuItem({
           id: 'runAll',
           parentId: 'jobSearchRoot',
-          title: runAllTitle,
+          title: 'Run All Actions',
           contexts: ['selection']
         });
       }
