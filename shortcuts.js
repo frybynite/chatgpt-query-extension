@@ -38,6 +38,9 @@ function loadShortcuts() {
     if (response && response.shortcuts) {
       shortcutMap = new Map(response.shortcuts);
       console.log('[Shortcuts] Loaded', shortcutMap.size, 'shortcuts');
+      console.log('[Shortcuts] Shortcut map:', Array.from(shortcutMap.entries()));
+    } else {
+      console.warn('[Shortcuts] No shortcuts received from background');
     }
   });
 }
@@ -59,6 +62,7 @@ document.addEventListener('keydown', (event) => {
   }
 
   const shortcut = normalizeShortcut(event);
+  console.log('[Shortcuts] Key pressed:', shortcut);
   const actionId = shortcutMap.get(shortcut);
 
   if (actionId) {
