@@ -41,6 +41,8 @@ let currentConfig = null;
 let selectedMenuId = null;
 let draggedElement = null;
 let draggedMenuElement = null;
+let savedFormState = null;  // Snapshot of form state to detect changes
+let isDirty = false;         // Flag indicating if current menu has unsaved changes
 
 // ====== INITIALIZATION ======
 document.addEventListener('DOMContentLoaded', async () => {
@@ -98,6 +100,13 @@ function createMenuElement(menu) {
 
   menuItem.dataset.menuId = menu.id;
   menuItem.querySelector('.menu-name').textContent = menu.name;
+
+  // Add unsaved changes indicator if this menu is selected and has changes
+  if (menu.id === selectedMenuId && isDirty) {
+    const indicator = document.createElement('span');
+    indicator.className = 'menu-unsaved-indicator';
+    menuItem.insertBefore(indicator, menuItem.querySelector('.menu-name'));
+  }
 
   // Mark as selected if this is the currently selected menu
   if (menu.id === selectedMenuId) {
@@ -184,6 +193,85 @@ function loadMenuDetails(menuId) {
 
   // Render actions for this menu
   renderActions(menu);
+
+  // Capture initial state for change detection
+  savedFormState = captureFormState();
+  isDirty = false;
+  updateMenuIndicator();
+}
+
+// ====== UNSAVED CHANGES TRACKING ======
+function captureFormState() {
+  if (!selectedMenuId) return null;
+
+  const state = {
+    menuId: selectedMenuId,
+    menuName: menuNameInput.value.trim(),
+    customGptUrl: customGptUrlInput.value.trim(),
+    autoSubmit: autoSubmitCheckbox.checked,
+    runAllEnabled: runAllEnabledCheckbox.checked,
+    runAllShortcut: runAllShortcutInput.value.trim(),
+    actions: []
+  };
+
+  // Capture all actions
+  const actionItems = actionsListContainer.querySelectorAll('.action-item');
+  actionItems.forEach((item, index) => {
+    state.actions.push({
+      id: item.dataset.actionId,
+      order: index + 1,
+      title: item.querySelector('.action-title').value.trim(),
+      prompt: item.querySelector('.action-prompt').value.trim(),
+      shortcut: item.querySelector('.action-shortcut').value.trim(),
+      enabled: item.querySelector('.action-enabled').checked
+    });
+  });
+
+  return state;
+}
+
+function compareFormStates(state1, state2) {
+  if (!state1 || !state2) return true; // Different if either is null
+  if (state1.menuId !== state2.menuId) return true;
+
+  // Compare menu fields
+  if (state1.menuName !== state2.menuName) return true;
+  if (state1.customGptUrl !== state2.customGptUrl) return true;
+  if (state1.autoSubmit !== state2.autoSubmit) return true;
+  if (state1.runAllEnabled !== state2.runAllEnabled) return true;
+  if (state1.runAllShortcut !== state2.runAllShortcut) return true;
+
+  // Compare actions (order, count, and content)
+  if (state1.actions.length !== state2.actions.length) return true;
+
+  for (let i = 0; i < state1.actions.length; i++) {
+    const a1 = state1.actions[i];
+    const a2 = state2.actions[i];
+
+    if (a1.id !== a2.id) return true;
+    if (a1.order !== a2.order) return true;
+    if (a1.title !== a2.title) return true;
+    if (a1.prompt !== a2.prompt) return true;
+    if (a1.shortcut !== a2.shortcut) return true;
+    if (a1.enabled !== a2.enabled) return true;
+  }
+
+  return false; // No differences
+}
+
+function checkForChanges() {
+  const currentState = captureFormState();
+  const hasChanges = compareFormStates(savedFormState, currentState);
+
+  if (hasChanges !== isDirty) {
+    isDirty = hasChanges;
+    updateMenuIndicator();
+  }
+}
+
+function updateMenuIndicator() {
+  // Re-render menu list to update indicator
+  renderMenuList();
 }
 
 // ====== MENU CRUD OPERATIONS ======
@@ -386,18 +474,23 @@ function attachActionEventListeners(actionItem) {
 
   const titleInput = actionItem.querySelector('.action-title');
   const promptInput = actionItem.querySelector('.action-prompt');
+  const enabledCheckbox = actionItem.querySelector('.action-enabled');
 
   titleInput.addEventListener('input', () => {
     if (titleInput.value.trim()) {
       titleInput.classList.remove('error');
     }
+    checkForChanges();
   });
 
   promptInput.addEventListener('input', () => {
     if (promptInput.value.trim()) {
       promptInput.classList.remove('error');
     }
+    checkForChanges();
   });
+
+  enabledCheckbox.addEventListener('change', checkForChanges);
 
   // Drag and drop
   const dragHandle = actionItem.querySelector('.drag-handle');
@@ -434,6 +527,7 @@ function deleteAction(actionItem) {
   if (confirm(`Delete "${actionTitle}"?`)) {
     actionItem.remove();
     updateActionOrders();
+    checkForChanges();
   }
 }
 
@@ -442,6 +536,7 @@ function updateActionOrders() {
   actionItems.forEach((item, index) => {
     item.dataset.order = index + 1;
   });
+  checkForChanges();
 }
 
 function handleAddAction() {
@@ -472,6 +567,9 @@ function handleAddAction() {
   const titleInput = actionElement.querySelector('.action-title');
   titleInput.focus();
   titleInput.select();
+
+  // Mark form as changed
+  checkForChanges();
 }
 
 // ====== ACTION DRAG AND DROP ======
@@ -816,6 +914,10 @@ async function handleSave() {
     // Save
     await saveConfig(currentConfig);
 
+    // Reset dirty state after successful save
+    savedFormState = captureFormState();
+    isDirty = false;
+
     // Update menu list (name might have changed)
     renderMenuList();
 
@@ -958,7 +1060,14 @@ function attachEventListeners() {
     if (menuNameInput.value.trim()) {
       menuNameInput.classList.remove('error');
     }
+    checkForChanges();
   });
+
+  // Change detection for menu configuration fields
+  customGptUrlInput.addEventListener('input', checkForChanges);
+  autoSubmitCheckbox.addEventListener('change', checkForChanges);
+  runAllEnabledCheckbox.addEventListener('change', checkForChanges);
+  runAllShortcutInput.addEventListener('input', checkForChanges);
 
   // Actions
   addActionButton.addEventListener('click', handleAddAction);
