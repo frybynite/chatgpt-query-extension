@@ -74,6 +74,24 @@ async function takeStoreScreenshots() {
   await firstAction.locator('.action-title').fill('Summarize Text');
   await firstAction.locator('.action-prompt').fill('Please provide a concise summary of the selected text, highlighting the key points and main ideas.');
 
+  // Add keyboard shortcut (Option-Shift-J = Alt+Shift+J in Chrome format)
+  // Click the capture button first
+  const captureBtn = firstAction.locator('.btn-capture');
+  await captureBtn.click();
+  await page.waitForTimeout(200);
+
+  // Simulate the shortcut key press (Alt+Shift+J)
+  await page.keyboard.down('Alt');
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('KeyJ');
+  await page.keyboard.up('Shift');
+  await page.keyboard.up('Alt');
+  await page.waitForTimeout(300);
+
+  // Scroll down to show all action fields (shortcut, enabled checkbox, etc.)
+  await page.evaluate(() => window.scrollBy(0, 200));
+  await page.waitForTimeout(300);
+
   await page.screenshot({
     path: path.join(screenshotsDir, '02-menu-with-action.png'),
     fullPage: false,
