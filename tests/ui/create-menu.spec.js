@@ -127,7 +127,11 @@ test.describe('UI Tests - Create Menu', () => {
 
     const selectedText = await selectedMenu.textContent();
 
-    // Click elsewhere (like the import button) to test focus
+    // Click elsewhere to test focus - open hamburger menu first
+    const hamburgerBtn = optionsPage.locator('#hamburger-menu');
+    await hamburgerBtn.click();
+    await optionsPage.waitForTimeout(100);
+
     const exportBtn = optionsPage.locator('#export-config');
     await exportBtn.hover();
 

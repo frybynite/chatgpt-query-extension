@@ -146,7 +146,7 @@ test.describe('UI Tests - Modal Overlays', () => {
     await expect(modalOverlay).toBeVisible();
 
     const modalTitle = optionsPage.locator('#modal-title');
-    await expect(modalTitle).toContainText('Import Configuration');
+    await expect(modalTitle).toContainText('Import Menus');
 
     const modalMessage = optionsPage.locator('#modal-message');
     const messageText = await modalMessage.textContent();
