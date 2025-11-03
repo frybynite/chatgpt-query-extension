@@ -72,7 +72,7 @@ async function takeStoreScreenshots() {
   const actionItems = page.locator('.action-item');
   const firstAction = actionItems.first();
   await firstAction.locator('.action-title').fill('Summarize Text');
-  await firstAction.locator('.action-prompt').fill('Please summarize the following text:\n\n%s');
+  await firstAction.locator('.action-prompt').fill('Please provide a concise summary of the selected text, highlighting the key points and main ideas.');
 
   await page.screenshot({
     path: path.join(screenshotsDir, '02-menu-with-action.png'),
