@@ -1,4 +1,5 @@
 import { getConfig, migrateConfig } from './config.js';
+import { debugLogSync as debugLog } from './debug.js';
 
 // ====== DYNAMIC CONFIG ======
 // Config is now loaded from chrome.storage.sync
@@ -29,26 +30,31 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 // ====== SHORTCUT FORMATTING ======
 // Format shortcut string for display with platform-appropriate symbols
+// Input is always in Chrome format (Ctrl, Alt, Shift, Meta) or legacy Mac symbols
+// Output is Mac symbols on Mac, Chrome format on Windows/Linux
 function formatShortcutForDisplay(shortcut) {
   if (!shortcut) return '';
 
   // Detect Mac based on user agent in service worker context
   const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
 
+  // First normalize any legacy Mac symbols to Chrome format
+  let normalized = shortcut
+    .replace(/⌃/g, 'Ctrl')
+    .replace(/⌥/g, 'Alt')
+    .replace(/⇧/g, 'Shift')
+    .replace(/⌘/g, 'Meta');
+
   if (isMac) {
-    // Convert PC key names to Mac symbols
-    return shortcut
+    // Convert Chrome format to Mac symbols for display
+    return normalized
       .replace(/Ctrl/g, '⌃')
       .replace(/Alt/g, '⌥')
       .replace(/Shift/g, '⇧')
       .replace(/Meta/g, '⌘');
   } else {
-    // Convert Mac symbols to PC key names
-    return shortcut
-      .replace(/⌃/g, 'Ctrl')
-      .replace(/⌥/g, 'Alt')
-      .replace(/⇧/g, 'Shift')
-      .replace(/⌘/g, 'Meta');
+    // On Windows/Linux, return Chrome format as-is
+    return normalized;
   }
 }
 
@@ -58,7 +64,7 @@ let isRebuildingMenus = false;
 async function rebuildContextMenus() {
   // Prevent concurrent rebuilds
   if (isRebuildingMenus) {
-    console.log('[Background] Menu rebuild already in progress, skipping');
+    debugLog('[Background] Menu rebuild already in progress, skipping');
     return;
   }
 
@@ -124,14 +130,14 @@ async function rebuildContextMenus() {
           });
         }
 
-        console.log(`[Background] Menu "${menu.name}": ${enabledActions.length} actions`);
+        debugLog(`[Background] Menu "${menu.name}": ${enabledActions.length} actions`);
       });
 
-      console.log(`[Background] Context menus rebuilt: ${sortedMenus.length} menus`);
+      debugLog(`[Background] Context menus rebuilt: ${sortedMenus.length} menus`);
     }
     // V2 fallback (for migration compatibility)
     else {
-      console.log('[Background] Using V2 fallback for context menus');
+      debugLog('[Background] Using V2 fallback for context menus');
       createMenuItem({
         id: 'jobSearchRoot',
         title: config.globalSettings?.contextMenuTitle || 'Send to ChatGPT',
@@ -162,7 +168,7 @@ async function rebuildContextMenus() {
         });
       }
 
-      console.log('[Background] Context menus rebuilt (V2 format):', enabledActions.length, 'actions');
+      debugLog('[Background] Context menus rebuilt (V2 format):', enabledActions.length, 'actions');
     }
   } catch (e) {
     console.error('[Background] Error rebuilding context menus:', e);
@@ -171,22 +177,10 @@ async function rebuildContextMenus() {
   }
 }
 
-// ====== SHORTCUT NORMALIZATION ======
-// Convert Mac unicode symbols to standard key names for shortcut matching
-function normalizeShortcut(shortcut) {
-  if (!shortcut) return '';
-
-  // Convert Mac symbols to PC key names (for consistent matching)
-  return shortcut
-    .replace(/⌃/g, 'Ctrl')
-    .replace(/⌥/g, 'Alt')
-    .replace(/⇧/g, 'Shift')
-    .replace(/⌘/g, 'Meta');
-}
-
 // ====== SHORTCUT MAP BUILDER ======
+// Build shortcut map by sending shortcuts as-is (order doesn't matter - matching is done by modifier sets)
 function buildShortcutMap(config) {
-  const map = new Map();
+  const shortcuts = [];
 
   // V3: Multiple menus
   if (config.menus && Array.isArray(config.menus)) {
@@ -195,15 +189,13 @@ function buildShortcutMap(config) {
       menu.actions
         .filter(action => action.enabled && action.shortcut)
         .forEach(action => {
-          // Normalize shortcut to standard key names for matching
-          const normalizedShortcut = normalizeShortcut(action.shortcut);
-          map.set(normalizedShortcut, { menuId: menu.id, actionId: action.id });
+          // Send shortcut as-is - matching will be done by modifier sets in shortcuts.js
+          shortcuts.push([action.shortcut, { menuId: menu.id, actionId: action.id }]);
         });
 
       // Add Run All shortcut for this menu if enabled and configured
       if (menu.runAllEnabled && menu.runAllShortcut) {
-        const normalizedShortcut = normalizeShortcut(menu.runAllShortcut);
-        map.set(normalizedShortcut, { menuId: menu.id, actionId: 'runAll' });
+        shortcuts.push([menu.runAllShortcut, { menuId: menu.id, actionId: 'runAll' }]);
       }
     });
   }
@@ -212,23 +204,21 @@ function buildShortcutMap(config) {
     config.actions
       ?.filter(action => action.enabled && action.shortcut)
       .forEach(action => {
-        const normalizedShortcut = normalizeShortcut(action.shortcut);
-        map.set(normalizedShortcut, action.id);
+        shortcuts.push([action.shortcut, action.id]);
       });
 
     if (config.globalSettings?.runAllEnabled && config.globalSettings?.runAllShortcut) {
-      const normalizedShortcut = normalizeShortcut(config.globalSettings.runAllShortcut);
-      map.set(normalizedShortcut, 'runAll');
+      shortcuts.push([config.globalSettings.runAllShortcut, 'runAll']);
     }
   }
 
-  return map;
+  return shortcuts;
 }
 
 // ====== STORAGE CHANGE LISTENER ======
 chrome.storage.onChanged.addListener(async (changes, areaName) => {
   if (areaName === 'sync' && changes.config) {
-    console.log('[Background] Config changed, rebuilding...');
+    debugLog('[Background] Config changed, rebuilding...');
     invalidateCache();
     await rebuildContextMenus();
 
@@ -240,7 +230,7 @@ chrome.storage.onChanged.addListener(async (changes, areaName) => {
     tabs.forEach(tab => {
       chrome.tabs.sendMessage(tab.id, {
         type: 'SHORTCUTS_UPDATED',
-        shortcuts: Array.from(shortcuts.entries())
+        shortcuts: shortcuts
       }).catch(() => {
         // Ignore errors for tabs where content script isn't loaded
       });
@@ -250,7 +240,7 @@ chrome.storage.onChanged.addListener(async (changes, areaName) => {
 
 // ====== CONTEXT MENU CLICK HANDLER ======
 chrome.contextMenus.onClicked.addListener(async (info) => {
-  console.log('[Background] Context menu clicked:', info.menuItemId, 'selection:', info.selectionText?.substring(0, 50));
+  debugLog('[Background] Context menu clicked:', info.menuItemId, 'selection:', info.selectionText?.substring(0, 50));
 
   if (!info.selectionText) {
     console.warn('[Background] No selection text, ignoring click');
@@ -259,14 +249,14 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
 
   const config = await loadConfig();
   const menuItemId = info.menuItemId;
-  console.log('[Background] Config loaded, processing menuItemId:', menuItemId);
+  debugLog('[Background] Config loaded, processing menuItemId:', menuItemId);
 
   // V3: Multiple menus (parse namespace menuId__actionId)
   if (config.menus && Array.isArray(config.menus)) {
-    console.log('[Background] Using V3 config with', config.menus.length, 'menus');
+    debugLog('[Background] Using V3 config with', config.menus.length, 'menus');
     // Parse menuItemId to extract menuId and actionId
     const parts = menuItemId.split('__');
-    console.log('[Background] Parsed menuItemId into parts:', parts);
+    debugLog('[Background] Parsed menuItemId into parts:', parts);
 
     if (parts.length === 2) {
       const [menuId, actionId] = parts;
@@ -277,11 +267,11 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
         console.warn('[Background] Menu not found:', menuId);
         return;
       }
-      console.log('[Background] Found menu:', menu.name);
+      debugLog('[Background] Found menu:', menu.name);
 
       // Handle "Run All" for this menu
       if (actionId === 'runAll') {
-        console.log('[Background] Executing Run All for menu:', menu.name);
+        debugLog('[Background] Executing Run All for menu:', menu.name);
         await runAllActions(info.selectionText.trim(), menu, config);
         return;
       }
@@ -292,10 +282,10 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
         console.warn('[Background] Action not found:', actionId, 'in menu:', menu.name);
         return;
       }
-      console.log('[Background] Found action:', action.title);
+      debugLog('[Background] Found action:', action.title);
 
       // Execute single action with menu's settings
-      console.log('[Background] Calling executeAction for:', action.title);
+      debugLog('[Background] Calling executeAction for:', action.title);
       await executeAction(action, info.selectionText.trim(), menu, config);
     } else {
       console.warn('[Background] Invalid menu item ID format:', menuItemId);
@@ -326,26 +316,26 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
 // ====== SINGLE ACTION EXECUTION (V3) ======
 async function executeAction(action, selectionText, menu, config) {
   const prompt = `${action.prompt} ${selectionText}`;
-  console.log('[Background] executeAction called for:', action.title);
-  console.log('[Background] Prompt:', prompt.substring(0, 100));
-  console.log('[Background] Menu URL:', menu.customGptUrl);
-  console.log('[Background] Auto-submit:', menu.autoSubmit);
+  debugLog('[Background] executeAction called for:', action.title);
+  debugLog('[Background] Prompt:', prompt.substring(0, 100));
+  debugLog('[Background] Menu URL:', menu.customGptUrl);
+  debugLog('[Background] Auto-submit:', menu.autoSubmit);
 
   try {
-    console.log('[Background] Opening ChatGPT tab...');
+    debugLog('[Background] Opening ChatGPT tab...');
     const tabId = await openOrFocusGptTab(menu.customGptUrl, config.globalSettings.clearContext);
-    console.log('[Background] Tab opened with ID:', tabId);
+    debugLog('[Background] Tab opened with ID:', tabId);
 
     const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     // Attempt #1
-    console.log('[Background] Attempting to inject prompt (attempt #1)...');
+    debugLog('[Background] Attempting to inject prompt (attempt #1)...');
     const ok1 = await tryInjectWithTiming(tabId, prompt, {
       label: `${action.id}-attempt#1`,
       autoSubmit: menu.autoSubmit,
       reqId
     });
-    console.log('[Background] Injection attempt #1 result:', ok1);
+    debugLog('[Background] Injection attempt #1 result:', ok1);
 
     // Retry if needed
     if (!ok1) {
@@ -408,7 +398,7 @@ async function runAllActions(selectionText, menu, config) {
     .filter(action => action.enabled)
     .sort((a, b) => a.order - b.order);
 
-  console.log(`[Background] Run All for "${menu.name}": Found ${enabledActions.length} enabled actions:`, enabledActions.map(a => a.title));
+  debugLog(`[Background] Run All for "${menu.name}": Found ${enabledActions.length} enabled actions:`, enabledActions.map(a => a.title));
 
   // Step 1: Create all tabs immediately IN ORDER, then wait for them to load IN PARALLEL
   const tabCreationPromises = enabledActions.map(async (action) => {
@@ -418,7 +408,7 @@ async function runAllActions(selectionText, menu, config) {
         active: false
       });
       const tabId = await waitForTitleMatch(tab.id, config.globalSettings.gptTitleMatch, 20000);
-      console.log(`[Background] Created tab ${tabId} for ${action.title}`);
+      debugLog(`[Background] Created tab ${tabId} for ${action.title}`);
       return { action, tabId };
     } catch (e) {
       console.warn(`[Background] Failed to create tab for ${action.title}:`, e);
@@ -434,7 +424,7 @@ async function runAllActions(selectionText, menu, config) {
     const prompt = `${action.prompt} ${selectionText}`;
 
     try {
-      console.log(`[Background] Injecting prompt for ${action.title} in tab ${tabId}`);
+      debugLog(`[Background] Injecting prompt for ${action.title} in tab ${tabId}`);
 
       const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -459,7 +449,7 @@ async function runAllActions(selectionText, menu, config) {
   });
 
   await Promise.all(promises);
-  console.log(`[Background] All actions launched for menu "${menu.name}"`);
+  debugLog(`[Background] All actions launched for menu "${menu.name}"`);
 }
 
 // ====== RUN ALL ACTIONS HANDLER (V2 fallback) ======
@@ -468,7 +458,7 @@ async function runAllActionsV2(selectionText, config) {
     .filter(action => action.enabled)
     .sort((a, b) => a.order - b.order);
 
-  console.log(`[Background] Run All: Found ${enabledActions.length} enabled actions:`, enabledActions.map(a => a.title));
+  debugLog(`[Background] Run All: Found ${enabledActions.length} enabled actions:`, enabledActions.map(a => a.title));
 
   const tabCreationPromises = enabledActions.map(async (action) => {
     try {
@@ -477,7 +467,7 @@ async function runAllActionsV2(selectionText, config) {
         active: false
       });
       const tabId = await waitForTitleMatch(tab.id, config.globalSettings?.gptTitleMatch || 'ChatGPT', 20000);
-      console.log(`[Background] Created tab ${tabId} for ${action.title}`);
+      debugLog(`[Background] Created tab ${tabId} for ${action.title}`);
       return { action, tabId };
     } catch (e) {
       console.warn(`[Background] Failed to create tab for ${action.title}:`, e);
@@ -513,26 +503,26 @@ async function runAllActionsV2(selectionText, config) {
   });
 
   await Promise.all(promises);
-  console.log('[Background] All actions launched');
+  debugLog('[Background] All actions launched');
 }
 
 // ====== TAB/TITLE HELPERS ======
 async function openOrFocusGptTab(customGptUrl, clearContext) {
-  console.log('[Background] openOrFocusGptTab called with URL:', customGptUrl);
+  debugLog('[Background] openOrFocusGptTab called with URL:', customGptUrl);
   const created = await chrome.tabs.create({
     url: `${customGptUrl}?fresh=${Date.now()}`,
     active: true
   });
-  console.log('[Background] Tab created with ID:', created.id);
+  debugLog('[Background] Tab created with ID:', created.id);
 
   // Load config to get gptTitleMatch
   const config = await loadConfig();
   const titleMatch = config.globalSettings?.gptTitleMatch || 'ChatGPT';
-  console.log('[Background] Waiting for title to match:', titleMatch);
+  debugLog('[Background] Waiting for title to match:', titleMatch);
 
   // Wait for tab to be ready before returning
   const result = await waitForTitleMatch(created.id, titleMatch, 20000);
-  console.log('[Background] Tab ready with ID:', result);
+  debugLog('[Background] Tab ready with ID:', result);
   return result;
 }
 
@@ -735,9 +725,9 @@ function createModalOverlayFunction() {
 
 // ====== INJECTION (returns true if inserted/submitted, else false) ======
 async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = false, reqId = "" } = {}) {
-  console.log('[Background] tryInjectWithTiming called:', { tabId, label, autoSubmit, reqId, promptLength: prompt.length });
+  debugLog('[Background] tryInjectWithTiming called:', { tabId, label, autoSubmit, reqId, promptLength: prompt.length });
   try {
-    console.log('[Background] Executing script in tab', tabId);
+    debugLog('[Background] Executing script in tab', tabId);
     const results = await chrome.scripting.executeScript({
       target: { tabId },
       func: (text, label, shouldSubmit, requestId) => {
@@ -913,9 +903,9 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
 
     // Normalize return (MV3 returns array of {result})
     const res = Array.isArray(results) && results[0] && results[0].result;
-    console.log('[Background] Script execution result:', res);
+    debugLog('[Background] Script execution result:', res);
     const ok = !!(res && (res.inserted || res.submitted) && !res.skipped);
-    console.log('[Background] Returning success status:', ok);
+    debugLog('[Background] Returning success status:', ok);
     return ok;
   } catch (e) {
     console.error("[Background] executeScript failed:", e);
@@ -934,7 +924,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Content script requesting current shortcuts
     loadConfig().then(config => {
       const shortcuts = buildShortcutMap(config);
-      sendResponse({ shortcuts: Array.from(shortcuts.entries()) });
+      sendResponse({ shortcuts: shortcuts });
     });
     return true; // Keep channel open for async response
   }

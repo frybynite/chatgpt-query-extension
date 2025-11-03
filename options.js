@@ -1,4 +1,5 @@
 import { getConfig, saveConfig, validateConfig } from './config.js';
+import { isDebugEnabled, setDebugEnabled, debugLogSync as debugLog } from './debug.js';
 
 // ====== DOM ELEMENTS ======
 // Menu management
@@ -33,6 +34,7 @@ const importFileInput = document.getElementById('import-file-input');
 // Hamburger menu
 const hamburgerButton = document.getElementById('hamburger-menu');
 const dropdownMenu = document.getElementById('dropdown-menu');
+const debugLoggingToggle = document.getElementById('debug-logging-toggle');
 
 // Banners
 const errorBanner = document.getElementById('error-banner');
@@ -55,29 +57,36 @@ const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
 // ====== SHORTCUT CONVERSION ======
 // Convert shortcuts to platform-appropriate display format
+// Input is always in Chrome format (Ctrl, Alt, Shift, Meta)
+// Output is Mac symbols on Mac, Chrome format on Windows/Linux
 function convertShortcutForDisplay(shortcut) {
   if (!shortcut) return '';
 
+  // First normalize any legacy Mac symbols to Chrome format
+  let normalized = shortcut
+    .replace(/⌃/g, 'Ctrl')
+    .replace(/⌥/g, 'Alt')
+    .replace(/⇧/g, 'Shift')
+    .replace(/⌘/g, 'Meta');
+
   if (isMac) {
-    // Convert PC key names to Mac symbols
-    return shortcut
+    // Convert Chrome format to Mac symbols for display
+    return normalized
       .replace(/Ctrl/g, '⌃')
       .replace(/Alt/g, '⌥')
       .replace(/Shift/g, '⇧')
       .replace(/Meta/g, '⌘');
   } else {
-    // Convert Mac symbols to PC key names
-    return shortcut
-      .replace(/⌃/g, 'Ctrl')
-      .replace(/⌥/g, 'Alt')
-      .replace(/⇧/g, 'Shift')
-      .replace(/⌘/g, 'Meta');
+    // On Windows/Linux, return Chrome format as-is
+    return normalized;
   }
 }
 
 // Convert shortcuts to word format for tooltips
-// Mac: ⌥ → "Option", ⌘ → "Command", ⌃ → "Control", ⇧ → "Shift"
-// Windows: Ctrl → "Control", Alt → "Alt", Shift → "Shift", Meta → "Windows"
+// Input is always in Chrome format (Ctrl, Alt, Shift, Meta) or legacy Mac symbols
+// Output uses platform-appropriate names:
+//   Mac: Ctrl → "Control", Alt → "Option", Shift → "Shift", Meta → "Command"
+//   Windows: Ctrl → "Control", Alt → "Alt", Shift → "Shift", Meta → "Windows"
 function convertShortcutToWords(shortcut) {
   if (!shortcut) return '';
 
@@ -86,14 +95,13 @@ function convertShortcutToWords(shortcut) {
   const convertedParts = parts.map(part => {
     const trimmed = part.trim();
 
-    // Handle Mac symbols first (these can appear regardless of platform if saved on Mac)
+    // First handle legacy Mac symbols (for backward compatibility)
     if (trimmed === '⌃') return 'Control';
-    if (trimmed === '⌥') return 'Option';
+    if (trimmed === '⌥') return isMac ? 'Option' : 'Alt';
     if (trimmed === '⇧') return 'Shift';
-    if (trimmed === '⌘') return 'Command';
+    if (trimmed === '⌘') return isMac ? 'Command' : 'Windows';
 
-    // Handle PC abbreviations - convert to platform-appropriate names
-    // On Mac, show Mac terminology even for PC shortcuts (for V2 imports)
+    // Handle Chrome format - convert to platform-appropriate names
     if (trimmed === 'Ctrl') return 'Control';
     if (trimmed === 'Alt') return isMac ? 'Option' : 'Alt';
     if (trimmed === 'Shift') return 'Shift';
@@ -165,22 +173,24 @@ function setupTooltipEvents(input, tooltip) {
   input.dataset.tooltipSetup = 'true';
 }
 
-// Extract raw shortcut value from displayed format
-// The displayed value is in platform-appropriate format (Mac symbols or Windows abbreviations)
-// We need to normalize it back to a consistent stored format
-// For consistency, we'll store shortcuts in the format that matches the current platform
+// Normalize a shortcut string to Chrome format (convert Mac symbols, preserve order)
+// Modifier order doesn't matter for matching (done by sets), but we normalize symbols for storage consistency
+function normalizeShortcutString(shortcut) {
+  if (!shortcut) return '';
+
+  // Convert Mac symbols to Chrome format, preserve order
+  return shortcut
+    .replace(/⌃/g, 'Ctrl')
+    .replace(/⌥/g, 'Alt')
+    .replace(/⇧/g, 'Shift')
+    .replace(/⌘/g, 'Meta');
+}
+
+// Extract raw shortcut value from displayed format and normalize to Chrome format
+// Display values may be in Mac symbols (⌃, ⌥, ⇧, ⌘) or Chrome format (Ctrl, Alt, Shift, Meta)
+// Converts symbols to Chrome format (order doesn't matter - matching is done by modifier sets)
 function extractRawShortcut(displayValue) {
-  if (!displayValue) return '';
-  
-  let rawValue = displayValue.trim();
-  
-  // If empty, return empty
-  if (!rawValue) return '';
-  
-  // The display value is already in the format for the current platform
-  // So we can use it directly as the stored value
-  // (Shortcuts are stored in platform-specific format based on where they were captured)
-  return rawValue;
+  return normalizeShortcutString(displayValue);
 }
 
 // ====== STATE ======
@@ -195,6 +205,10 @@ let dirtyMenus = new Set();       // Set of menuIds with unsaved changes
 document.addEventListener('DOMContentLoaded', async () => {
   await loadAndRender();
   attachEventListeners();
+
+  // Initialize debug logging toggle
+  const debugEnabled = await isDebugEnabled();
+  debugLoggingToggle.checked = debugEnabled;
 });
 
 // ====== LOAD AND RENDER ======
@@ -828,11 +842,11 @@ function captureShortcut(shortcutInput) {
     }
 
     const parts = [];
-    // Use Mac-friendly names on macOS
-    if (e.ctrlKey) parts.push(isMac ? '⌃' : 'Ctrl');
-    if (e.altKey) parts.push(isMac ? '⌥' : 'Alt');
-    if (e.shiftKey) parts.push(isMac ? '⇧' : 'Shift');
-    if (e.metaKey) parts.push(isMac ? '⌘' : 'Meta');
+    // Always capture in Chrome format (will be converted to Mac symbols for display)
+    if (e.ctrlKey) parts.push('Ctrl');
+    if (e.altKey) parts.push('Alt');
+    if (e.shiftKey) parts.push('Shift');
+    if (e.metaKey) parts.push('Meta');
 
     if (parts.length === 0) {
       updateShortcutDisplay(shortcutInput, '');
@@ -1036,7 +1050,7 @@ async function handleSave() {
     menu.customGptUrl = customGptUrlInput.value.trim();
     menu.autoSubmit = autoSubmitCheckbox.checked;
     menu.runAllEnabled = runAllEnabledCheckbox.checked;
-    menu.runAllShortcut = runAllShortcutInput.value.trim();
+    menu.runAllShortcut = extractRawShortcut(runAllShortcutInput.value);
 
     // Collect actions from DOM
     menu.actions = [];
@@ -1179,6 +1193,36 @@ async function handleImportFile(e) {
 
     const text = await file.text();
     const importedConfig = JSON.parse(text);
+
+    // Normalize all shortcuts in the imported config to canonical form
+    // This ensures shortcuts work regardless of modifier order in the file
+    if (importedConfig.menus && Array.isArray(importedConfig.menus)) {
+      importedConfig.menus.forEach(menu => {
+        // Normalize Run All shortcut
+        if (menu.runAllShortcut) {
+          menu.runAllShortcut = normalizeShortcutString(menu.runAllShortcut);
+        }
+        // Normalize action shortcuts
+        if (menu.actions && Array.isArray(menu.actions)) {
+          menu.actions.forEach(action => {
+            if (action.shortcut) {
+              action.shortcut = normalizeShortcutString(action.shortcut);
+            }
+          });
+        }
+      });
+    }
+    // V2 format fallback
+    else if (importedConfig.actions && Array.isArray(importedConfig.actions)) {
+      importedConfig.actions.forEach(action => {
+        if (action.shortcut) {
+          action.shortcut = normalizeShortcutString(action.shortcut);
+        }
+      });
+      if (importedConfig.globalSettings?.runAllShortcut) {
+        importedConfig.globalSettings.runAllShortcut = normalizeShortcutString(importedConfig.globalSettings.runAllShortcut);
+      }
+    }
 
     const errors = validateConfig(importedConfig);
     if (errors.length > 0) {
@@ -1455,6 +1499,12 @@ function attachEventListeners() {
       dropdownMenu.classList.add('hidden');
       hamburgerButton.setAttribute('aria-expanded', 'false');
     }
+  });
+
+  // Debug logging toggle
+  debugLoggingToggle.addEventListener('change', async (e) => {
+    await setDebugEnabled(e.target.checked);
+    console.log('[Debug] Debug logging', e.target.checked ? 'enabled' : 'disabled');
   });
 
   // Run All shortcut capture

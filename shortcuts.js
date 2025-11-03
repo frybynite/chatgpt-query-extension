@@ -1,46 +1,149 @@
+// ====== DEBUG LOGGING ======
+let debugEnabled = false;
+
+// Load debug state from session storage
+try {
+  if (chrome.storage && chrome.storage.session) {
+    chrome.storage.session.get('debugLogging').then(result => {
+      debugEnabled = result.debugLogging === true;
+    }).catch(() => {
+      debugEnabled = false;
+    });
+
+    // Listen for debug state changes
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'session' && changes.debugLogging) {
+        debugEnabled = changes.debugLogging.newValue === true;
+      }
+    });
+  }
+} catch (e) {
+  // Session storage not available, debug disabled
+  debugEnabled = false;
+}
+
+function debugLog(...args) {
+  if (debugEnabled) {
+    console.log(...args);
+  }
+}
+
 // ====== STATE ======
-let shortcutMap = new Map(); // "Alt+Shift+J" → "fitMatch"
+// Store shortcuts as parsed objects: {modifiers: Set, key: string, actionId: object}
+let shortcuts = [];
 
-// ====== SHORTCUT NORMALIZATION ======
-function normalizeShortcut(event) {
-  const parts = [];
+// ====== SHORTCUT PARSING ======
+// Parse a shortcut string into modifiers set and key
+function parseShortcut(shortcutString) {
+  if (!shortcutString) return null;
 
-  // Add modifiers in consistent order
-  if (event.ctrlKey) parts.push('Ctrl');
-  if (event.altKey) parts.push('Alt');
-  if (event.shiftKey) parts.push('Shift');
-  if (event.metaKey) parts.push('Meta');
+  // Convert Mac symbols to Chrome format
+  let normalized = shortcutString
+    .replace(/⌃/g, 'Ctrl')
+    .replace(/⌥/g, 'Alt')
+    .replace(/⇧/g, 'Shift')
+    .replace(/⌘/g, 'Meta');
 
-  // Use e.code for physical key (Mac compatibility)
-  // e.code examples: "KeyA", "Digit1", "ArrowUp", "Space"
-  const code = event.code;
+  const parts = normalized.split('+');
+  if (parts.length === 0) return null;
 
-  // Convert code to display key (same logic as options.js)
-  let displayKey;
-  if (code.startsWith('Key')) {
-    displayKey = code.replace('Key', ''); // "KeyY" -> "Y"
-  } else if (code.startsWith('Digit')) {
-    displayKey = code.replace('Digit', ''); // "Digit1" -> "1"
-  } else if (code.startsWith('Arrow')) {
-    displayKey = code.replace('Arrow', ''); // "ArrowUp" -> "Up"
-  } else {
-    displayKey = code; // Use as-is for special keys
+  const modifiers = new Set();
+  const validModifiers = ['Ctrl', 'Alt', 'Shift', 'Meta'];
+  let key = null;
+
+  parts.forEach(part => {
+    const trimmed = part.trim();
+    if (validModifiers.includes(trimmed)) {
+      modifiers.add(trimmed);
+    } else {
+      key = normalizeKeyString(trimmed); // The actual key (letter, number, etc.)
+    }
+  });
+
+  if (modifiers.size === 0 || !key) {
+    return null; // Invalid shortcut
   }
 
-  parts.push(displayKey);
+  return { modifiers, key };
+}
 
-  return parts.join('+');
+// Extract modifiers and key from keyboard event
+function extractKeyPress(event) {
+  const modifiers = new Set();
+  
+  if (event.ctrlKey) modifiers.add('Ctrl');
+  if (event.altKey) modifiers.add('Alt');
+  if (event.shiftKey) modifiers.add('Shift');
+  if (event.metaKey) modifiers.add('Meta');
+
+  // Use e.code for physical key (Mac compatibility)
+  const key = normalizeKeyString(event.code);
+
+  return { modifiers, key };
+}
+
+// Check if two modifier sets match exactly (same modifiers, no extras)
+function modifierSetsMatch(set1, set2) {
+  if (set1.size !== set2.size) return false;
+  for (const mod of set1) {
+    if (!set2.has(mod)) return false;
+  }
+  return true;
+}
+
+// Normalize key strings from config or keyboard events to a consistent format
+function normalizeKeyString(value) {
+  if (!value) return '';
+
+  let key = value.trim();
+
+  // Handle codes like "KeyH" and "Digit1"
+  if (key.startsWith('Key')) {
+    key = key.slice(3);
+  } else if (key.startsWith('Digit')) {
+    key = key.slice(5);
+  } else if (key.startsWith('Arrow')) {
+    key = key.slice(5); // "ArrowUp" -> "Up"
+  }
+
+  // Normalize single characters to uppercase (letters)
+  if (key.length === 1) {
+    return key.toUpperCase();
+  }
+
+  return key;
 }
 
 // ====== LOAD SHORTCUTS FROM BACKGROUND ======
 function loadShortcuts() {
   chrome.runtime.sendMessage({ type: 'GET_SHORTCUTS' }, (response) => {
+    debugLog('[Shortcuts] Received shortcuts from background:', response);
     if (response && response.shortcuts) {
-      shortcutMap = new Map(response.shortcuts);
-      console.log('[Shortcuts] Loaded', shortcutMap.size, 'shortcuts');
-      console.log('[Shortcuts] Shortcut map:', Array.from(shortcutMap.entries()));
+      shortcuts = [];
+      // Response format: [["shortcutString", actionId], ...]
+      response.shortcuts.forEach(([shortcutString, actionId]) => {
+        const parsed = parseShortcut(shortcutString);
+        if (parsed) {
+          const shortcutObj = {
+            modifiers: parsed.modifiers,
+            key: parsed.key,
+            actionId: actionId
+          };
+          debugLog('[Shortcuts] Parsed Shortcut:', {
+            modifiers: Array.from(shortcutObj.modifiers),
+            key: shortcutObj.key,
+            actionId: shortcutObj.actionId
+          });
+          shortcuts.push(shortcutObj);
+        }
+        else{
+          console.warn('[Shortcuts] Invalid shortcut:', shortcutString);
+        }
+      });
+      debugLog('[Shortcuts] Loaded', shortcuts.length, 'shortcuts');
     } else {
       console.warn('[Shortcuts] No shortcuts received from background');
+      shortcuts = [];
     }
   });
 }
@@ -48,8 +151,18 @@ function loadShortcuts() {
 // Listen for shortcut updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'SHORTCUTS_UPDATED') {
-    shortcutMap = new Map(message.shortcuts);
-    console.log('[Shortcuts] Updated', shortcutMap.size, 'shortcuts');
+    shortcuts = [];
+    message.shortcuts.forEach(([shortcutString, actionId]) => {
+      const parsed = parseShortcut(shortcutString);
+      if (parsed) {
+        shortcuts.push({
+          modifiers: parsed.modifiers,
+          key: parsed.key,
+          actionId: actionId
+        });
+      }
+    });
+    debugLog('[Shortcuts] Updated', shortcuts.length, 'shortcuts');
   }
 });
 
@@ -61,37 +174,45 @@ document.addEventListener('keydown', (event) => {
     return;
   }
 
-  const shortcut = normalizeShortcut(event);
-  console.log('[Shortcuts] Key pressed:', shortcut);
-  const actionId = shortcutMap.get(shortcut);
+  const pressed = extractKeyPress(event);
+  debugLog('[Shortcuts] Key pressed:', Array.from(pressed.modifiers).join('+') + '+' + pressed.key);
 
-  if (actionId) {
-    console.log('[Shortcuts] Triggered:', shortcut, '→', actionId);
+  // Find matching shortcut by checking modifier sets and key
+  const matchedShortcut = shortcuts.find(shortcut => {
+    // Check if keys match
+    if (shortcut.key !== pressed.key) return false;
+    
+    // Check if modifier sets match exactly (same modifiers, no extras, no missing)
+    return modifierSetsMatch(shortcut.modifiers, pressed.modifiers);
+  });
+
+  if (matchedShortcut) {
+    debugLog('[Shortcuts] Triggered:', Array.from(pressed.modifiers).join('+') + '+' + pressed.key, '→', matchedShortcut.actionId);
     event.preventDefault();
     event.stopPropagation();
 
     // Check if extension context is still valid
     if (!chrome.runtime?.id) {
-      console.log('[Shortcuts] Extension reloaded - please refresh this page to use shortcuts');
+      debugLog('[Shortcuts] Extension reloaded - please refresh this page to use shortcuts');
       return;
     }
 
     // Get selected text
     const selection = window.getSelection?.() ? String(window.getSelection()).trim() : '';
     if (!selection) {
-      console.log('[Shortcuts] No text selected');
+      debugLog('[Shortcuts] No text selected');
       return;
     }
 
     // Send message to background to execute action
     chrome.runtime.sendMessage({
       type: 'EXECUTE_SHORTCUT',
-      actionId: actionId,
+      actionId: matchedShortcut.actionId,
       selectionText: selection
     }).catch(error => {
       // Extension context invalidated - happens after extension reload
       if (error.message?.includes('Extension context invalidated')) {
-        console.log('[Shortcuts] Extension reloaded - please refresh this page to use shortcuts');
+        debugLog('[Shortcuts] Extension reloaded - please refresh this page to use shortcuts');
       } else {
         console.error('[Shortcuts] Failed to send message:', error);
       }

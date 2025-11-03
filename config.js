@@ -1,3 +1,5 @@
+import { debugLogSync as debugLog } from './debug.js';
+
 // ====== CONFIG VERSION ======
 const CURRENT_CONFIG_VERSION = 3;
 
@@ -46,7 +48,7 @@ function migrateConfigVersion(config) {
     return config;
   }
 
-  console.log(`[Config] Migrating from v${configVersion} to v${CURRENT_CONFIG_VERSION}`);
+  debugLog(`[Config] Migrating from v${configVersion} to v${CURRENT_CONFIG_VERSION}`);
 
   let migratedConfig = { ...config };
 
@@ -65,13 +67,13 @@ function migrateConfigVersion(config) {
   // Future migrations will go here:
   // if (configVersion < 4) { ... }
 
-  console.log(`[Config] Migration complete to v${CURRENT_CONFIG_VERSION}`);
+  debugLog(`[Config] Migration complete to v${CURRENT_CONFIG_VERSION}`);
   return migratedConfig;
 }
 
 // ====== V2 TO V3 MIGRATION ======
 function migrateV2toV3(v2Config) {
-  console.log('[Config] Migrating V2 → V3: Converting single menu to multi-menu format');
+  debugLog('[Config] Migrating V2 → V3: Converting single menu to multi-menu format');
 
   // Generate unique ID for the menu
   const menuId = `menu_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -81,6 +83,9 @@ function migrateV2toV3(v2Config) {
   const v2Actions = v2Config.actions || [];
 
   // Create single menu from V2 data
+  // Note: Shortcuts are preserved as-is. V2 already used Chrome format (Ctrl, Alt, Shift, Meta).
+  // Any legacy Mac symbols (⌃, ⌥, ⇧, ⌘) will be automatically normalized to Chrome format
+  // when shortcuts are loaded/displayed via convertShortcutForDisplay and extractRawShortcut.
   const menu = {
     id: menuId,
     name: v2Global.contextMenuTitle || "Send to ChatGPT",
@@ -102,7 +107,7 @@ function migrateV2toV3(v2Config) {
     }
   };
 
-  console.log(`[Config] V2 → V3 migration complete: Created menu "${menu.name}" with ${v2Actions.length} actions`);
+  debugLog(`[Config] V2 → V3 migration complete: Created menu "${menu.name}" with ${v2Actions.length} actions`);
   return v3Config;
 }
 
@@ -117,7 +122,7 @@ function validateConfig(config) {
 
   // Log version (warn if missing, but don't fail validation)
   const configVersion = config.version || 1;
-  console.log(`[Config] Validating config v${configVersion}`);
+  debugLog(`[Config] Validating config v${configVersion}`);
 
   // V3 validation (multi-menu format)
   if (configVersion >= 3) {
@@ -346,7 +351,7 @@ async function getConfig() {
     const defaultConfig = await loadDefaultConfig();
 
     if (!config) {
-      console.log('[Config] No config found, using defaults');
+      debugLog('[Config] No config found, using defaults');
       return JSON.parse(JSON.stringify(defaultConfig));
     }
 
@@ -356,7 +361,7 @@ async function getConfig() {
 
     // If migration happened, save the migrated config
     if (originalVersion !== CURRENT_CONFIG_VERSION) {
-      console.log('[Config] Saving migrated config');
+      debugLog('[Config] Saving migrated config');
       await chrome.storage.sync.set({ config: migratedConfig });
     }
 
@@ -385,7 +390,7 @@ async function saveConfig(config) {
 
   // Save to storage
   await chrome.storage.sync.set({ config });
-  console.log('[Config] Saved successfully');
+  debugLog('[Config] Saved successfully');
 }
 
 // ====== MIGRATION ======
@@ -394,15 +399,15 @@ async function migrateConfig() {
 
   // Already has new config format
   if (config) {
-    console.log('[Config] Already migrated');
+    debugLog('[Config] Already migrated');
     return;
   }
 
   // First time running v2.0.0 - create default config
-  console.log('[Config] Migrating to v2.0.0...');
+  debugLog('[Config] Migrating to v2.0.0...');
   const defaultConfig = await loadDefaultConfig();
   await chrome.storage.sync.set({ config: defaultConfig });
-  console.log('[Config] Migration complete');
+  debugLog('[Config] Migration complete');
 }
 
 // ====== EXPORTS ======
