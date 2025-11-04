@@ -106,16 +106,6 @@ Users expect keyboard shortcuts to work everywhere, which is why we need this br
 Full permissions justification available at:
 https://github.com/frybynite/chatgpt-query-extension/blob/main/PERMISSIONS_JUSTIFICATION.md
 
-Screenshot Descriptions
-
-Screenshot 1: Extension Options Page
-Configure your custom ChatGPT URL, create unlimited actions, and customize keyboard shortcuts. Full control over your workflow.
-
-Screenshot 2: Context Menu in Action
-Right-click selected text to access your custom actions. Quick and intuitive.
-
-Screenshot 3: Custom Actions Management
-Add, edit, reorder, and configure actions with drag-and-drop simplicity. Import/export for easy backup.
 
 Tags/Keywords
 chatgpt, productivity, automation, keyboard shortcuts, custom prompts, ai assistant, workflow, text processing, custom gpt, job search, chatgpt plus
