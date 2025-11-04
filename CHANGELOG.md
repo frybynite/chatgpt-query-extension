@@ -31,6 +31,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Preserves existing menu name and settings
   - Creates single menu from V2 configuration
   - Seamless upgrade path
+- **Modern UI Components**:
+  - Hamburger menu with modernized modal design
+  - Custom modal overlays replacing browser confirmation dialogs
+  - Info icon popups for form field help text
+- **Keyboard Shortcut Enhancements**:
+  - Visual keyboard shortcut display with tooltips showing word versions
+  - Comprehensive shortcut conflict detection system
+- **Unsaved Changes Tracking**:
+  - Unsaved changes indicator in menu sidebar
+  - Per-menu change tracking when switching between menus
+- **Debug Logging System**: Built-in debug logging for troubleshooting
 
 ### Changed
 - Config structure updated to support multiple menus (V3 format)
@@ -38,6 +49,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Context menu now shows multiple menu entries (grouped by Chrome)
 - Options page redesigned with sidebar + detail panel layout
 - Menu management now primary workflow in options UI
+- Import/Export buttons moved to header for better accessibility
+
+### Fixed
+- Run All shortcut not working after importing V2 configuration
+- V2 shortcut tooltip conversion issues on Mac
+- ChatGPT prompt injection failure
+- Save button not updating sidebar display (Issue #2)
+- Plus icon centering in Add Menu button
+- Keyboard shortcut normalization to use standard key names
+- Menu order now auto-saves when reordering via drag and drop
 
 ### Breaking Changes
 - Configuration structure changed from V2 to V3 format

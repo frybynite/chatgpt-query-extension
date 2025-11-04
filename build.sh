@@ -42,6 +42,7 @@ echo -e "${YELLOW}Copying extension files...${NC}"
 cp manifest.json "$BUILD_TEMP/"
 cp background.js "$BUILD_TEMP/"
 cp config.js "$BUILD_TEMP/"
+cp debug.js "$BUILD_TEMP/"
 cp default-config.json "$BUILD_TEMP/"
 cp shortcuts.js "$BUILD_TEMP/"
 

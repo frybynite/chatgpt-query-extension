@@ -1,0 +1,136 @@
+ChatGPT Custom Prompts transforms how you interact with ChatGPT. Select any text on any webpage, press a keyboard shortcut or use the context menu, and instantly send it to your custom ChatGPT with pre-configured prompts. No more copying, switching tabs, pasting, and retyping the same instructions.
+
+Perfect for job seekers analyzing postings, researchers summarizing articles, developers reviewing code, or anyone using custom GPTs regularly. Create unlimited actions with personalized prompts, assign shortcuts to each, and process text through multiple prompts simultaneously with "Run All Actions."
+
+Everything is stored locally with full import/export support for backups and sharing. No data collection, no tracking, no external servers - just a fast, privacy-focused productivity tool.
+
+✨ KEY FEATURES
+
+🎯 Custom Prompts
+Create unlimited custom actions with personalized prompts. Whether you're analyzing job postings, summarizing articles, or processing code, configure prompts that match your needs.
+
+⌨️ Keyboard Shortcuts
+Assign custom keyboard shortcuts to any action. Select text, press your shortcut (e.g., Alt+Shift+J), and watch it instantly appear in ChatGPT with your custom prompt.
+
+🚀 Run All Actions
+Process selected text through multiple prompts simultaneously in parallel tabs. Perfect for comprehensive analysis from different angles.
+
+⚙️ Fully Configurable
+• Add, edit, remove, and reorder actions with drag-and-drop
+• Customize keyboard shortcuts for Mac and Windows
+• Configure context menu titles
+• Enable/disable auto-submit
+• Hamburger menu for quick access to settings and tools
+
+🔄 Smart Tab Management
+Automatically opens or focuses your ChatGPT tab. No manual tab juggling.
+
+📤 Import/Export & Settings Menu
+Access export, import, and debug logging through the convenient hamburger menu (☰). Backup your configuration to JSON, share it with colleagues, or import configurations from others. Debug logging helps troubleshoot issues when needed.
+
+🎓 PERFECT FOR
+
+• Job seekers analyzing postings and creating cover letters
+• Researchers summarizing articles and papers
+• Writers getting feedback and editing suggestions
+• Developers analyzing code and documentation
+• Students processing study materials
+• Anyone who frequently uses ChatGPT with custom GPTs
+
+💡 HOW IT WORKS
+
+1. Configure your custom ChatGPT URL (https://help.openai.com/en/articles/8554397-creating-a-gpt)
+  * Once completed, copy the URL of your custom GPT
+2. Create actions with custom prompts that will be sent to your custom GPT along with the selected text
+  * In browser enter chrome://extensions/
+  * Find ChatGPT Custom Prompts
+  * Click Details
+  * Scroll down to choose Extension Options
+  * Fill out options form, including your custom GPT URL and desired actions
+  * Save your configuration
+3. Navigate to a webpage and select any text
+  * NOTE that if you want to use on an open tab it is best to refresh that tab after saving any settings changes
+4. Right-click or use keyboard shortcut to execute that action / prompt
+5. A new window is created with your prompt text and selected text for your Custom ChatGPT which can optionally be submitted automatically.
+
+🔒 PRIVACY & SECURITY
+
+• No data collection or tracking
+• All settings stored locally in Chrome sync storage
+• Open source - review the code on GitHub
+• MIT Licensed
+• No external servers or analytics
+
+
+📋 REQUIREMENTS
+
+• ChatGPT Plus subscription (for custom GPTs)
+• A custom GPT configured for your use case
+• Chrome browser
+
+🔗 LINKS
+
+• GitHub: https://github.com/frybynite/chatgpt-query-extension
+• Privacy Policy: https://github.com/frybynite/chatgpt-query-extension/blob/main/PRIVACY.md
+• Report Issues: https://github.com/frybynite/chatgpt-query-extension/issues
+• Review Changelog: https://github.com/frybynite/chatgpt-query-extension/blob/main/CHANGELOG.md
+
+💬 SUPPORT
+
+Need help? Found a bug? Have a feature request?
+Open an issue on GitHub or check the documentation in the repository.
+
+---
+
+*ChatGPT Custom Prompts is not affiliated with OpenAI. ChatGPT is a trademark of OpenAI.*
+
+
+Privacy Policy URL: https://github.com/frybynite/chatgpt-query-extension/blob/main/PRIVACY.md
+
+Homepage URL: https://github.com/frybynite/chatgpt-query-extension
+
+## Justification for Permissions
+
+* Why does this extension need `<all_urls>` content script permission?
+
+The extension provides customizable keyboard shortcuts that allow users to trigger custom ChatGPT prompts from any website. For these shortcuts to work consistently across all websites (job boards, documentation sites, emails, social media, etc.), the lightweight keyboard listener must be available on all pages.
+
+The content script:
+- Only listens for keyboard shortcuts
+- Does not read page content or collect any data
+- Only sends a message to the background script when a configured shortcut is pressed
+- Is minimal (~100 lines) and can be reviewed in the open source repository
+
+Users expect keyboard shortcuts to work everywhere, which is why we need this broad permission. The extension does not use this permission for any data collection or tracking.
+
+Full permissions justification available at:
+https://github.com/frybynite/chatgpt-query-extension/blob/main/PERMISSIONS_JUSTIFICATION.md
+
+Screenshot Descriptions
+
+Screenshot 1: Extension Options Page
+Configure your custom ChatGPT URL, create unlimited actions, and customize keyboard shortcuts. Full control over your workflow.
+
+Screenshot 2: Context Menu in Action
+Right-click selected text to access your custom actions. Quick and intuitive.
+
+Screenshot 3: Custom Actions Management
+Add, edit, reorder, and configure actions with drag-and-drop simplicity. Import/export for easy backup.
+
+Tags/Keywords
+chatgpt, productivity, automation, keyboard shortcuts, custom prompts, ai assistant, workflow, text processing, custom gpt, job search, chatgpt plus
+
+Target Audience
+
+• ChatGPT Plus subscribers
+• Power users who frequently interact with ChatGPT
+• Professionals using ChatGPT for work
+• Job seekers using ChatGPT for applications
+• Researchers and students
+• Developers and technical writers
+
+Distribution
+
+Visibility: Public
+Regions: All countries
+Pricing: Free

@@ -7,6 +7,8 @@ A Chrome extension that allows you to send selected text to your custom ChatGPT 
 - **Multiple Menus** ✨ **NEW in v3.0.0**: Create up to 10 independent menu configurations, each with its own GPT URL, actions, and settings
 - **Fully Configurable**: Configure all actions, shortcuts, and settings via options page
 - **Custom Actions**: Add, edit, remove, and reorder actions without code changes
+- **Drag-and-Drop Reordering**: Reorder menus and actions by dragging the handle (≡) icon
+- **Enable/Disable Actions**: Toggle individual actions on/off without deleting them
 - **Custom Shortcuts**: Assign any keyboard shortcut to any action
 - **Import/Export**: Backup and share configurations via JSON
 - **Context Menu Integration**: Right-click selected text to send it to your custom GPT(s)
@@ -14,6 +16,9 @@ A Chrome extension that allows you to send selected text to your custom ChatGPT 
 - **Auto-Submit**: Optionally submit prompts automatically for hands-free operation (per-menu)
 - **Parallel Processing**: Run all actions simultaneously in separate tabs (per-menu)
 - **Robust Injection**: Automatic retry on failure with fresh context option
+- **Clear Context**: Global setting to clear ChatGPT context before injecting new prompts
+- **Debug Logging**: Optional debug logging toggle in hamburger menu for troubleshooting
+- **Interactive UI Help**: Info popups (ⓘ) throughout the interface explain each setting
 
 ## Installation
 
@@ -29,17 +34,29 @@ A Chrome extension that allows you to send selected text to your custom ChatGPT 
 
 **v2.0.0 and later:** All configuration is done through the options page (chrome://extensions → Details → Extension options).
 
+**User Interface Layout (v3.0.0+):**
+- **Left Sidebar**: Lists all your menus (up to 10) with drag-and-drop reordering
+- **Right Panel**: Shows configuration and actions for the selected menu
+- **Hamburger Menu (☰)**: Access Import/Export and Debug Logging toggle
+- **Info Icons (ⓘ)**: Click for helpful explanations of each setting
+
 **Configuration Options:**
 - **Multiple Menus** (v3.0.0+): Create up to 10 separate menu configurations
-  - Each menu has its own name (becomes the context menu title)
-  - Each menu has its own Custom GPT URL
+  - Each menu has its own name (becomes the context menu title) - **Required**, max 50 characters
+  - Each menu has its own Custom GPT URL - **Required**
   - Each menu has its own Auto Submit setting
-  - Each menu has its own Run All configuration
+  - Each menu has its own Run All configuration with optional keyboard shortcut
   - Each menu has its own list of actions
-- **Custom GPT URL**: Your custom GPT URL per menu (e.g., https://chatgpt.com/g/g-...)
-- **Auto Submit**: Enable/disable per menu for automatically submitting prompts
-- **Enable Run All Actions**: Per-menu "Run All" feature with configurable shortcut
-- **Actions**: Add, edit, remove, and reorder actions with custom prompts and shortcuts
+  - Drag the handle (≡) to reorder menus
+- **Actions**: Add, edit, remove, enable/disable, and reorder actions
+  - **Title** (required) - Appears in context menu
+  - **Prompt** (required) - The text sent to ChatGPT
+  - **Keyboard Shortcut** (optional) - Quick access key combination
+  - **Enabled** checkbox - Toggle actions on/off without deleting
+  - Drag the handle (≡) to reorder actions within a menu
+- **Global Settings**:
+  - **Clear Context**: Clears ChatGPT's context before injecting new prompts (default: enabled)
+  - **Debug Logging**: Enable detailed console logging for troubleshooting (in hamburger menu)
 
 **For v1.6.0 and earlier users:** Your existing configuration will be automatically migrated to the new options page on first load.
 
@@ -70,12 +87,16 @@ After creating your GPT:
 ### Context Menu
 1. Select text on any webpage
 2. Right-click the selection
-3. Choose your configured action from the context menu
+3. Choose your menu, then select an action from the context menu
 4. The extension will open/focus your GPT tab and insert the text
+5. If Auto-Submit is enabled, the prompt will be submitted automatically
+
+**Note:** Only enabled actions appear in the context menu. Disabled actions are hidden but remain configured.
 
 ### Keyboard Shortcuts
 1. Select text on any webpage
-2. Press your configured keyboard shortcut
+2. Press your configured keyboard shortcut for any enabled action
+3. The extension will open/focus your GPT tab and insert the text
 
 ### Customizing Shortcuts
 
@@ -95,8 +116,9 @@ After creating your GPT:
 ### Exporting Your Configuration
 
 1. Open Extension options
-2. Click "Export JSON"
-3. Save the downloaded `chatgpt-actions-config.json` file
+2. Click the hamburger menu (☰) in the top-left corner
+3. Click "Export Menus..."
+4. Save the downloaded `chatgpt-actions-config.json` file
 
 Use this to:
 - Backup your configuration
@@ -106,9 +128,10 @@ Use this to:
 ### Importing a Configuration
 
 1. Open Extension options
-2. Click "Import JSON"
-3. Select a previously exported configuration file
-4. Confirm the import
+2. Click the hamburger menu (☰) in the top-left corner
+3. Click "Import Menus..."
+4. Select a previously exported configuration file
+5. Confirm the import
 
 **Warning:** Importing will replace your current configuration. Export your current settings first if you want to preserve them.
 
@@ -118,22 +141,32 @@ Use this to:
 - Check that the GPT URL and title match are correctly configured
 - Ensure ChatGPT page is fully loaded before selecting text
 - Try disabling auto-submit and manually clicking send
+- Enable **Debug Logging** in the hamburger menu (☰) and check browser console for details
 
 ### Tabs not opening correctly
 - Verify the Custom GPT URL is correct in extension options
 - Check browser's tab title by hovering over the tab
 - Ensure ChatGPT is accessible and you're logged in
+- Enable **Debug Logging** to see tab management details in the console
 
 ### Keyboard shortcuts don't work
 - Ensure no other extension is using the same shortcuts
 - Configure shortcuts in the extension options page
-- After reloading the extension, refresh any open pages to reload the content script
+- **After changing shortcuts, reload any open tabs** for changes to take effect
 - Some system shortcuts may override extension shortcuts
+- Check that the action is **Enabled** (checkbox must be checked)
 
 ### "Could not auto-insert text" alert
 - ChatGPT may have changed their DOM structure
-- Check browser console for detailed error logs
-- Consider updating selector patterns in background.js:130-139
+- Enable **Debug Logging** and check browser console for detailed error logs
+- Consider updating selector patterns in background.js if you're a developer
+
+### Getting detailed logs
+1. Open Extension options
+2. Click the hamburger menu (☰) in the top-left
+3. Check "Debug Logging"
+4. Open your browser's Developer Console (F12 or Ctrl+Shift+I / Cmd+Option+I)
+5. Reproduce the issue and review console output
 
 ## Configuration Best Practices
 
@@ -142,18 +175,26 @@ Use this to:
 - Customize keyboard shortcuts to match your muscle memory
 - Use "Run All Actions" when you need comprehensive analysis
 
-### Managing Actions
-- Disable actions you don't use frequently to keep menus clean
-- Reorder actions to put most-used ones at the top
+### Managing Menus and Actions
+- Use the drag handle (≡) to reorder menus and actions - most-used items at the top
+- Disable actions you don't use frequently instead of deleting them (preserves your work)
+- Organize related actions into separate menus (e.g., "Work", "Personal", "Research")
+- Keep menu names short and descriptive (max 50 characters)
 - Export your configuration regularly as backup
+
+### Troubleshooting Tips
+- Enable Debug Logging (hamburger menu) to see detailed console output
+- Click info icons (ⓘ) for help with specific settings
+- After changing shortcuts, reload any open tabs for changes to take effect
 
 ## Limitations
 
 - Only works with ChatGPT (chatgpt.com and chat.openai.com)
 - Requires ChatGPT Plus subscription for custom GPT access
 - ~~Hardcoded GPT URL~~ **Now configurable via options page!**
-- No icon or visual branding
+- ~~No icon or visual branding~~ **Custom icons added in v2.0.3!**
 - Fixed retry timing may not work on very slow connections
+- Maximum of 10 menus (Chrome extension context menu limit)
 
 ## Future Enhancements
 
@@ -162,12 +203,12 @@ Potential improvements for future versions:
 - ~~Support for multiple custom actions~~ **✅ Completed in v2.0.0**
 - ~~Configurable keyboard shortcuts~~ **✅ Completed in v2.0.0**
 - ~~Multiple independent menus~~ **✅ Completed in v3.0.0**
-- Extension icon and branding
+- ~~Extension icon and branding~~ **✅ Completed in v2.0.3**
 - Configurable retry timing
 - Status notifications instead of alerts
 - Support for Claude/other AI assistants
 - Action templates marketplace
-- Support for other browsers
+- Support for other browsers (Firefox, Edge)
 
 ## Version History
 
