@@ -41,7 +41,7 @@ test.describe('UI Tests - Popup', () => {
     await expect(privacyLink).toBeVisible();
     await expect(privacyLink).toHaveText('Privacy Policy');
     const href = await privacyLink.getAttribute('href');
-    expect(href).toBe('PRIVACY.md');
+    expect(href).toBe('https://github.com/frybynite/chatgpt-query-extension/blob/main/PRIVACY.md');
     console.log('✓ Privacy Policy link is present');
 
     // Verify Change Settings button exists
