@@ -18,7 +18,7 @@
           "enabled": true,
           "id": "action_1761661336339_vaemi",
           "order": 2,
-          "prompt": "Do a very quick review a provide a fit match for the job position:",
+          "prompt": "Quick fit match for the job position:",
           "shortcut": "Alt+Shift+K",
           "title": "Fit Match"
         },
