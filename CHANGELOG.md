@@ -5,6 +5,23 @@ All notable changes to ChatGPT Custom Prompts extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-11-05
+
+### Added
+- **Clickable Extension Popup**: Extension icon now opens a popup interface
+  - Displays extension icon, name, and version number
+  - Quick access to Privacy Policy (opens GitHub page in new tab)
+  - "Change Settings" button to open full options page
+  - Version number dynamically loaded from manifest
+- **Popup Tests**: Comprehensive Playwright tests for popup functionality
+  - Test popup content display
+  - Test settings navigation
+  - Test version matching
+
+### Improved
+- User experience: Extension icon now provides quick access to information and settings
+- No longer requires right-click to access options
+
 ## [3.0.0] - 2025-11-01
 
 ### Added
