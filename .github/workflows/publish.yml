@@ -46,11 +46,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Chrome Web Store
-        uses: trmcnvn/chrome-webstore-upload@v2
+        uses: mnao305/chrome-extension-upload@v5.0.0
         with:
+          file-path: build/${{ steps.get_version.outputs.zip_file }}
           extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          file: build/${{ steps.get_version.outputs.zip_file }}
           publish: true
