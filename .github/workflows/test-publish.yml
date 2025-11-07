@@ -1,0 +1,44 @@
+name: Test Publish Workflow
+
+on:
+  push:
+    branches:
+      - test-publish  # Only runs on this branch
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  test-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Build Extension
+        run: ./build.sh
+
+      - name: List build artifacts
+        run: ls -lh build/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-build
+          path: build/*.zip
+          retention-days: 5
+
+      # Comment out the actual publishing steps for testing
+      # - name: Create GitHub Release
+      # - name: Publish to Chrome Web Store

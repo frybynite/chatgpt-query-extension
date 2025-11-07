@@ -4,3 +4,4 @@ build/
 build-temp/
 node_modules/
 test-results/
+.chrome-secrets.json
