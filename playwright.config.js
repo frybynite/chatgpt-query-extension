@@ -13,7 +13,7 @@ export default defineConfig({
   testDir: './tests',
 
   // Maximum time one test can run
-  timeout: process.env.CI ? 120 * 1000 : 60 * 1000, // 2 minutes in CI, 60 seconds locally
+  timeout: 60 * 1000, // 60 seconds
 
   // Test execution settings
   fullyParallel: false, // Run tests in sequence for extension testing
