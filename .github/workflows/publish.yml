@@ -31,10 +31,10 @@ jobs:
       - name: Build Extension
         run: ./build.sh
 
-      - name: Extract Version from Tag
+      - name: Extract Version from Manifest
         id: get_version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          VERSION=$(grep '"version"' manifest.json | sed 's/.*"version": "\(.*\)".*/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "zip_file=chatgpt-custom-prompts-v${VERSION}.zip" >> $GITHUB_OUTPUT
 
