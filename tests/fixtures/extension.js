@@ -24,8 +24,10 @@ export const test = base.extend({
     const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playwright-chrome-'));
 
     // Launch browser with extension loaded
+    // Use chromium channel for extension support in headless mode (Playwright 1.49+)
     const context = await chromium.launchPersistentContext(userDataDir, {
       headless: !!process.env.CI, // Use headless mode in CI environment
+      channel: 'chromium', // Required for extensions in headless mode
       args: [
         `--disable-extensions-except=${extensionPath}`,
         `--load-extension=${extensionPath}`,
@@ -46,10 +48,18 @@ export const test = base.extend({
   },
 
   extensionId: async ({ context }, use) => {
-    // Navigate to chrome://extensions to get the extension ID
+    // Get the extension ID from service worker
     let [background] = context.serviceWorkers();
     if (!background) {
-      background = await context.waitForEvent('serviceworker');
+      // In CI, service workers may take longer to initialize
+      // Use a shorter timeout to fail fast if something is wrong
+      try {
+        background = await context.waitForEvent('serviceworker', {
+          timeout: process.env.CI ? 30000 : 10000
+        });
+      } catch (error) {
+        throw new Error(`Failed to get extension service worker: ${error.message}`);
+      }
     }
 
     const extensionId = background.url().split('/')[2];

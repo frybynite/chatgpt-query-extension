@@ -52,6 +52,8 @@ export default defineConfig({
       name: 'chromium-extension',
       use: {
         ...devices['Desktop Chrome'],
+        // Use chromium channel for extension support in headless mode (Playwright 1.49+)
+        channel: 'chromium',
         // Extension-specific launch options will be added in test fixtures
         // We cannot set them here as we need dynamic extension path
       },
