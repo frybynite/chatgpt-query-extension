@@ -81,7 +81,7 @@ test.describe('UI Tests - Info Icons', () => {
     // Check for info icons
     const expectedFields = [
       { label: 'Menu Name', selector: 'label[for="menuName"]' },
-      { label: 'Custom GPT URL', selector: 'label[for="customGptUrl"]' },
+      { label: 'ChatGPT URL', selector: 'label[for="customGptUrl"]' },
       { label: 'Auto Submit', selector: 'label:has(input#autoSubmit)' },
       { label: 'Run All Enabled', selector: 'label:has(input#runAllEnabled)' },
       { label: 'Run All Shortcut', selector: 'label[for="runAllShortcut"]' }

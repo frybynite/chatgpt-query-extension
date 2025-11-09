@@ -4,7 +4,7 @@
     {
       "id": "menu_default_001",
       "name": "Send to ChatGPT",
-      "customGptUrl": "https://chatgpt.com/g/g-<<YOUR CUSTOM GPT URL>>",
+      "customGptUrl": "https://chatgpt.com",
       "autoSubmit": true,
       "runAllEnabled": false,
       "runAllShortcut": "",

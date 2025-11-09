@@ -22,7 +22,7 @@ async function loadDefaultConfig() {
         {
           id: `menu_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
           name: "Send to ChatGPT",
-          customGptUrl: "https://chatgpt.com/g/g-<<YOUR CUSTOM GPT URL>>",
+          customGptUrl: "https://chatgpt.com",
           autoSubmit: true,
           runAllEnabled: false,
           runAllShortcut: "",
@@ -134,8 +134,8 @@ function validateConfig(config) {
   if (!config.globalSettings) {
     errors.push('Missing globalSettings');
   } else {
-    if (!config.globalSettings.customGptUrl?.startsWith('https://chatgpt.com/')) {
-      errors.push('Custom GPT URL must start with https://chatgpt.com/');
+    if (!config.globalSettings.customGptUrl?.startsWith('https://chatgpt.com')) {
+      errors.push('Custom GPT URL must start with https://chatgpt.com');
     }
     if (!config.globalSettings.gptTitleMatch?.trim()) {
       errors.push('GPT Title Match is required');
@@ -253,8 +253,8 @@ function validateV3Config(config) {
     }
 
     // Custom GPT URL validation
-    if (!menu.customGptUrl?.startsWith('https://chatgpt.com/')) {
-      errors.push(`${menuLabel}: Custom GPT URL must start with https://chatgpt.com/`);
+    if (!menu.customGptUrl?.startsWith('https://chatgpt.com')) {
+      errors.push(`${menuLabel}: Custom GPT URL must start with https://chatgpt.com`);
     }
 
     // Boolean validations
