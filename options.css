@@ -587,6 +587,12 @@ header .header-icon {
   border-top: 1px solid #e0e0e0;
 }
 
+.footer-left-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .btn-danger {
   background: #d93025;
   color: white;

@@ -27,6 +27,8 @@ const actionTemplate = document.getElementById('action-template');
 
 // Global actions
 const saveButton = document.getElementById('save');
+const revertButton = document.getElementById('revert-changes');
+const revertAllButton = document.getElementById('revert-all-changes');
 const exportButton = document.getElementById('export-config');
 const importButton = document.getElementById('import-config');
 const importFileInput = document.getElementById('import-file-input');
@@ -226,6 +228,7 @@ async function loadAndRender() {
     } else {
       // No menus - show empty state
       showNoMenuSelected();
+      updateRevertButtons();
     }
 
     // Hide banners and reload reminder
@@ -332,6 +335,9 @@ function selectMenu(menuId) {
 
   // Load menu details
   loadMenuDetails(menuId);
+
+  // Update revert button states
+  updateRevertButtons();
 }
 
 function showNoMenuSelected() {
@@ -465,15 +471,40 @@ function checkForChanges() {
   if (hasChanges && !wasDirty) {
     dirtyMenus.add(selectedMenuId);
     updateMenuIndicator();
+    updateRevertButtons();
   } else if (!hasChanges && wasDirty) {
     dirtyMenus.delete(selectedMenuId);
     updateMenuIndicator();
+    updateRevertButtons();
   }
 }
 
 function updateMenuIndicator() {
   // Re-render menu list to update indicator
   renderMenuList();
+}
+
+function updateRevertButtons() {
+  const revertBtn = document.getElementById('revert-changes');
+  const revertAllBtn = document.getElementById('revert-all-changes');
+
+  if (!revertBtn || !revertAllBtn) return;
+
+  // Update "Revert Changes" button - visible only if current menu is dirty
+  const currentMenuDirty = selectedMenuId && dirtyMenus.has(selectedMenuId);
+  if (currentMenuDirty) {
+    revertBtn.classList.remove('hidden');
+  } else {
+    revertBtn.classList.add('hidden');
+  }
+
+  // Update "Revert All Changes" button - visible only if 2+ menus are dirty
+  const dirtyCount = dirtyMenus.size;
+  if (dirtyCount > 1) {
+    revertAllBtn.classList.remove('hidden');
+  } else {
+    revertAllBtn.classList.add('hidden');
+  }
 }
 
 // ====== MENU CRUD OPERATIONS ======
@@ -559,6 +590,121 @@ async function handleDeleteMenu() {
     showSuccess(`Menu "${menu.name}" deleted successfully`);
   } catch (e) {
     showError('Failed to delete menu: ' + e.message);
+  }
+}
+
+async function handleRevertCurrent() {
+  if (!selectedMenuId) return;
+  if (!dirtyMenus.has(selectedMenuId)) return;
+
+  const menu = currentConfig.menus.find(m => m.id === selectedMenuId);
+  if (!menu) return;
+
+  const menuName = menu.name; // Save for success message
+
+  const confirmed = await showConfirmModal(
+    'Revert Changes',
+    `Discard unsaved changes to "${menuName}"?`,
+    'warning'
+  );
+  if (!confirmed) return;
+
+  try {
+    // Reload config from storage to get the saved state
+    const savedConfig = await getConfig();
+    const savedMenu = savedConfig.menus.find(m => m.id === selectedMenuId);
+
+    if (!savedMenu) {
+      showError('Cannot find saved menu');
+      return;
+    }
+
+    // Update currentConfig to match saved menu from storage
+    const menuIndex = currentConfig.menus.findIndex(m => m.id === selectedMenuId);
+    if (menuIndex === -1) return;
+
+    currentConfig.menus[menuIndex] = { ...savedMenu };
+
+    // Remove from dirty menus
+    dirtyMenus.delete(selectedMenuId);
+
+    // Reload the menu details to update form
+    loadMenuDetails(selectedMenuId);
+
+    // Recapture the form state after loading reverted values
+    savedFormStates.set(selectedMenuId, captureFormState());
+
+    // Update UI
+    renderMenuList();
+    updateRevertButtons();
+
+    showSuccess(`Changes reverted successfully`);
+  } catch (e) {
+    showError('Failed to revert changes: ' + e.message);
+  }
+}
+
+async function handleRevertAll() {
+  if (dirtyMenus.size === 0) return;
+
+  const dirtyCount = dirtyMenus.size;
+  const confirmed = await showConfirmModal(
+    'Revert All Changes',
+    `Discard unsaved changes to ${dirtyCount} menu${dirtyCount > 1 ? 's' : ''}?`,
+    'warning'
+  );
+  if (!confirmed) return;
+
+  try {
+    // Reload config from storage to get the saved state for all menus
+    const savedConfig = await getConfig();
+
+    // Revert each dirty menu by replacing with saved version from storage
+    for (const menuId of dirtyMenus) {
+      const savedMenu = savedConfig.menus.find(m => m.id === menuId);
+      if (!savedMenu) continue;
+
+      const menuIndex = currentConfig.menus.findIndex(m => m.id === menuId);
+      if (menuIndex === -1) continue;
+
+      currentConfig.menus[menuIndex] = { ...savedMenu };
+    }
+
+    // Clear all dirty menus
+    dirtyMenus.clear();
+
+    // Reload current menu details if there's a selected menu
+    if (selectedMenuId) {
+      loadMenuDetails(selectedMenuId);
+      // Recapture the form state after loading reverted values
+      savedFormStates.set(selectedMenuId, captureFormState());
+    }
+
+    // Recapture saved states for all menus from the reloaded config
+    for (const menuId of Array.from(savedFormStates.keys())) {
+      if (menuId !== selectedMenuId) {
+        // For non-selected menus, update savedFormStates from currentConfig
+        const menu = currentConfig.menus.find(m => m.id === menuId);
+        if (menu) {
+          savedFormStates.set(menuId, {
+            name: menu.name,
+            customGptUrl: menu.customGptUrl,
+            autoSubmit: menu.autoSubmit,
+            runAllEnabled: menu.runAllEnabled,
+            runAllShortcut: menu.runAllShortcut,
+            actions: menu.actions.map(a => ({ ...a }))
+          });
+        }
+      }
+    }
+
+    // Update UI
+    renderMenuList();
+    updateRevertButtons();
+
+    showSuccess(`All changes reverted successfully (${dirtyCount} menu${dirtyCount > 1 ? 's' : ''})`);
+  } catch (e) {
+    showError('Failed to revert changes: ' + e.message);
   }
 }
 
@@ -1136,6 +1282,9 @@ async function handleSave() {
     // Update menu list (name might have changed)
     renderMenuList();
 
+    // Update revert button states
+    updateRevertButtons();
+
     // Check if there are no actions
     if (menu.actions.length === 0) {
       showWarning(`Menu "${menu.name}" saved successfully! However, you have no actions configured. Add at least one action to use this menu.`);
@@ -1466,6 +1615,10 @@ function attachEventListeners() {
 
   // Save
   saveButton.addEventListener('click', handleSave);
+
+  // Revert
+  revertButton.addEventListener('click', handleRevertCurrent);
+  revertAllButton.addEventListener('click', handleRevertAll);
 
   // Export/Import
   exportButton.addEventListener('click', () => {
