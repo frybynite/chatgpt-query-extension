@@ -51,6 +51,11 @@ cp options.html "$BUILD_TEMP/"
 cp options.css "$BUILD_TEMP/"
 cp options.js "$BUILD_TEMP/"
 
+# Popup files
+cp popup.html "$BUILD_TEMP/"
+cp popup.css "$BUILD_TEMP/"
+cp popup.js "$BUILD_TEMP/"
+
 # Icons
 mkdir -p "$BUILD_TEMP/icons"
 cp icons/*.png "$BUILD_TEMP/icons/"

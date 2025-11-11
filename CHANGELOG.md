@@ -5,6 +5,46 @@ All notable changes to ChatGPT Custom Prompts extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2025-11-09
+
+### Added
+- **Revert Changes Functionality**: Comprehensive ability to discard unsaved changes
+  - "Revert Changes" button for current menu (visible only when menu has unsaved changes)
+  - "Revert All Changes" button (visible when 2+ menus have unsaved changes)
+  - Confirmation dialogs before reverting to prevent accidental data loss
+  - Smart button visibility management based on dirty state
+  - Comprehensive test suite with 9 new tests covering all revert scenarios
+
+### Changed
+- **ChatGPT URL Configuration**: Updated to reflect current ChatGPT ecosystem
+  - Default URL changed to https://chatgpt.com (from custom GPT URL)
+  - Label updated from 'Custom GPT URL' to 'ChatGPT URL'
+  - Improved help text to clarify support for both chatgpt.com and custom GPT URLs
+  - Removed trailing slash requirement from URL validation
+  - Updated placeholder to show both URL format examples
+
+### Improved
+- User experience for managing unsaved changes with intuitive revert options
+- URL configuration clarity and flexibility for both standard ChatGPT and custom GPTs
+- Better feedback when users want to discard changes without saving
+
+## [3.1.1] - 2025-11-06
+
+### Added
+- **Automated Chrome Web Store Publishing**: CI/CD workflow for extension releases
+  - GitHub Actions workflow to publish extension on tag push
+  - Automated testing and building before publishing
+  - Automatic GitHub release creation
+  - OAuth helper script for Chrome Web Store authentication
+
+### Fixed
+- Version extraction in publish workflow now uses manifest.json instead of git tags
+- CI Playwright test configuration for headless Chrome testing
+
+### Improved
+- Deployment process with automated publishing pipeline
+- Test reliability in CI environment with proper browser installation
+
 ## [3.1.0] - 2025-11-05
 
 ### Added
