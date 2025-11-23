@@ -54,6 +54,14 @@ chatgpt-query-extension/
 ├── build/                     # Build output directory (ZIP files for distribution)
 ├── build.sh                   # Build script for creating distribution packages
 │
+├── scripts/                   # Utility scripts for development and publishing
+│   ├── get-chrome-refresh-token.js   # OAuth refresh token generator
+│   └── test-chrome-credentials.js    # Chrome Web Store API credential validator
+│
+├── .github/                   # GitHub configuration
+│   └── workflows/
+│       └── publish.yml        # Automated Chrome Web Store publishing workflow
+│
 ├── docs/                      # Documentation files
 │   ├── CHROME_WEB_STORE.md
 │   ├── PERMISSIONS_JUSTIFICATION.md
@@ -374,6 +382,120 @@ See docs/SUBMISSION_CHECKLIST.md for complete submission process.
 4. Complete store listing (see docs/STORE_LISTING.md)
 5. Add screenshots (see docs/SCREENSHOT_GUIDE.md)
 6. Submit for review
+
+### Automated Publishing with GitHub Actions
+
+The extension can be automatically published to Chrome Web Store when you push a git tag.
+
+#### Prerequisites
+
+**1. Google Cloud Project Setup**
+- Create a project in [Google Cloud Console](https://console.cloud.google.com)
+- Enable Chrome Web Store API
+- Create OAuth 2.0 credentials (Web application type)
+- Add `http://localhost:8080` to Authorized redirect URIs
+- Set OAuth consent screen Publishing Status to **"In Production"** (not "Testing")
+  - This prevents refresh tokens from expiring after 7 days
+
+**2. Get OAuth Credentials**
+
+Run the helper script to obtain your credentials:
+
+```bash
+node scripts/get-chrome-refresh-token.js
+```
+
+This script will:
+1. Prompt for your Client ID and Client Secret
+2. Open OAuth authorization flow in your browser
+3. Start a local server to receive the authorization code
+4. Exchange the code for a refresh token
+5. Display all credentials needed for GitHub Actions
+
+Save the output - you'll need:
+- `CHROME_CLIENT_ID`
+- `CHROME_CLIENT_SECRET`
+- `CHROME_REFRESH_TOKEN`
+- `CHROME_EXTENSION_ID` (from Chrome Web Store Developer Dashboard)
+
+**3. Test Credentials**
+
+Validate your credentials before adding to GitHub:
+
+```bash
+node scripts/test-chrome-credentials.js
+```
+
+This script:
+- Reads credentials from `.chrome-secrets.json`
+- Exchanges refresh token for access token
+- Makes a test API call to Chrome Web Store
+- Confirms credentials are working correctly
+
+Expected output:
+```
+✓ Credentials loaded
+✓ Access token obtained successfully
+✓ API call successful!
+✓ All tests passed!
+```
+
+**4. Configure GitHub Secrets**
+
+Add the credentials to your GitHub repository:
+
+1. Go to repository Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Add each secret:
+   - `CHROME_CLIENT_ID` - OAuth client ID
+   - `CHROME_CLIENT_SECRET` - OAuth client secret
+   - `CHROME_REFRESH_TOKEN` - OAuth refresh token
+   - `CHROME_EXTENSION_ID` - Extension ID from Chrome Web Store
+
+#### Publishing Workflow
+
+The GitHub Actions workflow (`.github/workflows/publish.yml`) automatically:
+
+1. **Triggers** on git tags matching `v*` pattern (e.g., `v3.2.3`)
+2. **Runs tests** using Playwright in headless mode
+3. **Builds extension** using build.sh
+4. **Publishes to Chrome Web Store** using the mnao305/chrome-extension-upload action
+5. **Creates GitHub Release** (optional step)
+
+**To publish a new version:**
+
+```bash
+# Update version in manifest.json
+# Run tests locally
+npm test
+
+# Create git tag
+git tag v3.2.3
+git push origin v3.2.3
+```
+
+The workflow will automatically build and publish the extension.
+
+#### Troubleshooting Automated Publishing
+
+**Error: 400 Bad Request**
+
+Common causes:
+- **Expired refresh token** - Regenerate using `get-chrome-refresh-token.js`
+- **OAuth app in "Testing" mode** - Change to "In Production" in OAuth consent screen
+- **Pending review** - Check Chrome Web Store dashboard for blocking reviews
+- **Missing permission justification** - Some permissions require manual justification in dashboard
+
+**Verify credentials:**
+```bash
+node scripts/test-chrome-credentials.js
+```
+
+**Manual upload fallback:**
+
+If automated publishing fails:
+1. Run `./build.sh` to create the ZIP package
+2. Manually upload at [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 
 ## Common Modifications
 

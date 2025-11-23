@@ -5,6 +5,21 @@ All notable changes to ChatGPT Custom Prompts extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.3] - 2025-11-23
+
+### Fixed
+- **Legacy Branding Cleanup**: Removed all references to old "JobSearchExt" branding
+  - Updated console log labels from `[JobSearchExt]` to `[ChatGPT-CP]` in background.js
+  - Fixed context menu IDs from `jobSearchRoot` to `chatgptRoot`
+  - Resolves Chrome Web Store 400 Bad Request errors during automated publishing
+
+### Added
+- **Credential Validation Script**: New `test-chrome-credentials.js` utility
+  - Validates Chrome Web Store API OAuth credentials
+  - Tests refresh token exchange for access tokens
+  - Makes test API calls to verify authentication
+  - Helps troubleshoot automated publishing issues
+
 ## [3.2.0] - 2025-11-09
 
 ### Added

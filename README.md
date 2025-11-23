@@ -22,6 +22,12 @@ A Chrome extension that allows you to send selected text to your custom ChatGPT 
 
 ## Installation
 
+### From Chrome Web Store
+
+1. Visit the [Chrome Web Store listing](https://chrome.google.com/webstore/detail/iaipkgodcejbmipbkpccldcechmnbgpd)
+2. Click "Add to Chrome"
+3. Confirm the installation when prompted
+
 ### From Source
 
 1. Clone or download this repository
@@ -212,7 +218,7 @@ Potential improvements for future versions:
 
 ## Version History
 
-### 3.0.0 (Current) - **Major Update: Multiple Menus**
+### 3.2.3 (Current)
 - **Multiple Independent Menus**: Create up to 10 separate menu configurations
 - **Per-Menu Settings**: Each menu has its own GPT URL, auto-submit, and Run All configuration
 - **Per-Menu Actions**: Each menu maintains its own independent list of actions
