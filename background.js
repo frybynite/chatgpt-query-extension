@@ -824,6 +824,26 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
           }
           return false;
         }
+        function waitForSendButton(maxWaitMs = 2000, intervalMs = 100) {
+          return new Promise((resolve) => {
+            const startTime = Date.now();
+            const poll = () => {
+              const btn = findSendButton();
+              if (btn) {
+                console.log("[JobSearchExt]", label, "send button found");
+                resolve(btn);
+                return;
+              }
+              if (Date.now() - startTime >= maxWaitMs) {
+                console.log("[JobSearchExt]", label, "send button not found after", maxWaitMs, "ms");
+                resolve(null);
+                return;
+              }
+              setTimeout(poll, intervalMs);
+            };
+            poll();
+          });
+        }
         function findSendButton() {
           const sels = [
             "form button[data-testid='send-button']",
@@ -839,18 +859,31 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
           }
           return null;
         }
-        function submit(editorEl) {
-          const btn = findSendButton();
+        async function submit(editorEl) {
+          // Wait for button to exist (up to 2 seconds)
+          const btn = await waitForSendButton(2000, 100);
+
           if (btn) {
-            let tries = 0; const max = 10;
-            const tick = () => {
-              const cs = getComputedStyle(btn);
-              const disabled = btn.disabled || cs.pointerEvents === "none" || cs.opacity === "0.5";
-              if (!disabled) { btn.click(); console.log("[JobSearchExt]", label, "clicked send button"); return true; }
-              if (++tries >= max) { console.log("[JobSearchExt]", label, "send disabled; fallback Enter"); return enter(editorEl); }
-              setTimeout(tick, 200);
-            };
-            tick(); return true;
+            return new Promise((resolve) => {
+              let tries = 0; const max = 10;
+              const tick = () => {
+                const cs = getComputedStyle(btn);
+                const disabled = btn.disabled || cs.pointerEvents === "none" || cs.opacity === "0.5";
+                if (!disabled) {
+                  btn.click();
+                  console.log("[JobSearchExt]", label, "clicked send button");
+                  resolve(true);
+                  return;
+                }
+                if (++tries >= max) {
+                  console.log("[JobSearchExt]", label, "send disabled; fallback Enter");
+                  resolve(enter(editorEl));
+                  return;
+                }
+                setTimeout(tick, 200);
+              };
+              tick();
+            });
           }
           return enter(editorEl);
         }
@@ -876,8 +909,13 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
           const editor = pickEditor();
           if (editor && setValue(editor, text)) {
             console.log("[JobSearchExt]", label, "inserted");
-            if (shouldSubmit) setTimeout(() => submit(editor), 150);
-            return { inserted: true, submitted: !!shouldSubmit, skipped: false };
+            if (shouldSubmit) {
+              setTimeout(async () => {
+                const result = await submit(editor);
+                console.log("[JobSearchExt]", label, "submission completed:", result);
+              }, 500);
+            }
+            return { inserted: true, submitted: false, skipped: false };
           }
           return null;
         };
