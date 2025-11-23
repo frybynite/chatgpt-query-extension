@@ -139,7 +139,7 @@ async function rebuildContextMenus() {
     else {
       debugLog('[Background] Using V2 fallback for context menus');
       createMenuItem({
-        id: 'jobSearchRoot',
+        id: 'chatgptRoot',
         title: config.globalSettings?.contextMenuTitle || 'Send to ChatGPT',
         contexts: ['selection']
       });
@@ -152,7 +152,7 @@ async function rebuildContextMenus() {
         // Don't display shortcuts in context menu (they still work via keyboard shortcuts)
         createMenuItem({
           id: action.id,
-          parentId: 'jobSearchRoot',
+          parentId: 'chatgptRoot',
           title: action.title,
           contexts: ['selection']
         });
@@ -162,7 +162,7 @@ async function rebuildContextMenus() {
         // Don't display shortcuts in context menu (they still work via keyboard shortcuts)
         createMenuItem({
           id: 'runAll',
-          parentId: 'jobSearchRoot',
+          parentId: 'chatgptRoot',
           title: 'Run All Actions',
           contexts: ['selection']
         });
