@@ -731,14 +731,14 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
     const results = await chrome.scripting.executeScript({
       target: { tabId },
       func: (text, label, shouldSubmit, requestId) => {
-        console.log("[JobSearchExt]", label, "inject start (debounced)", { requestId, shouldSubmit });
+        console.log("[ChatGPT-CP]", label, "inject start (debounced)", { requestId, shouldSubmit });
 
         // ---- page-level debounce: if same reqId already handled in last 10s, skip ----
         const now = Date.now();
         const DEBOUNCE_MS = 10_000;
         const g = (window.__JSE_STATE ||= {});
         if (g.lastReqId === requestId && now - (g.lastReqAt || 0) < DEBOUNCE_MS) {
-          console.log("[JobSearchExt]", label, "debounced duplicate requestId");
+          console.log("[ChatGPT-CP]", label, "debounced duplicate requestId");
           return { inserted: false, submitted: false, skipped: true };
         }
         g.lastReqId = requestId; g.lastReqAt = now;
@@ -784,13 +784,13 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
           for (const sel of SELECTORS_ORDERED) {
             const els = queryDeepAll(document, sel);
             const vis = els.filter(isVisible);
-            if (vis.length) { console.log("[JobSearchExt]", label, "matched visible:", sel, vis[0]); return vis[0]; }
+            if (vis.length) { console.log("[ChatGPT-CP]", label, "matched visible:", sel, vis[0]); return vis[0]; }
             if (els.length) {
-              console.log("[JobSearchExt]", label, "matched but hidden:", sel, els[0]);
+              console.log("[ChatGPT-CP]", label, "matched but hidden:", sel, els[0]);
               if (els[0].tagName === "TEXTAREA") {
                 const ce = nearestVisibleCE(els[0]); if (ce) return ce;
               }
-            } else { console.log("[JobSearchExt]", label, "not found:", sel); }
+            } else { console.log("[ChatGPT-CP]", label, "not found:", sel); }
           }
           return null;
         }
@@ -830,12 +830,12 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
             const poll = () => {
               const btn = findSendButton();
               if (btn) {
-                console.log("[JobSearchExt]", label, "send button found");
+                console.log("[ChatGPT-CP]", label, "send button found");
                 resolve(btn);
                 return;
               }
               if (Date.now() - startTime >= maxWaitMs) {
-                console.log("[JobSearchExt]", label, "send button not found after", maxWaitMs, "ms");
+                console.log("[ChatGPT-CP]", label, "send button not found after", maxWaitMs, "ms");
                 resolve(null);
                 return;
               }
@@ -855,7 +855,7 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
           ];
           for (const s of sels) {
             const c = queryDeepAll(document, s).filter(isVisible);
-            if (c.length) { console.log("[JobSearchExt]", label, "send button via", s, c[0]); return c[0]; }
+            if (c.length) { console.log("[ChatGPT-CP]", label, "send button via", s, c[0]); return c[0]; }
           }
           return null;
         }
@@ -871,12 +871,12 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
                 const disabled = btn.disabled || cs.pointerEvents === "none" || cs.opacity === "0.5";
                 if (!disabled) {
                   btn.click();
-                  console.log("[JobSearchExt]", label, "clicked send button");
+                  console.log("[ChatGPT-CP]", label, "clicked send button");
                   resolve(true);
                   return;
                 }
                 if (++tries >= max) {
-                  console.log("[JobSearchExt]", label, "send disabled; fallback Enter");
+                  console.log("[ChatGPT-CP]", label, "send disabled; fallback Enter");
                   resolve(enter(editorEl));
                   return;
                 }
@@ -893,11 +893,11 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
             const opts = { bubbles: true, cancelable: true, key: "Enter", code: "Enter", keyCode: 13, which: 13 };
             editorEl.dispatchEvent(new KeyboardEvent("keydown", opts));
             editorEl.dispatchEvent(new KeyboardEvent("keyup", opts));
-            console.log("[JobSearchExt]", label, "sent Enter");
+            console.log("[ChatGPT-CP]", label, "sent Enter");
             return true;
           } catch {
             const form = editorEl.closest && editorEl.closest("form");
-            if (form?.requestSubmit) { form.requestSubmit(); console.log("[JobSearchExt]", label, "form.requestSubmit()"); return true; }
+            if (form?.requestSubmit) { form.requestSubmit(); console.log("[ChatGPT-CP]", label, "form.requestSubmit()"); return true; }
           }
           return false;
         }
@@ -908,11 +908,11 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
         const tryOnce = () => {
           const editor = pickEditor();
           if (editor && setValue(editor, text)) {
-            console.log("[JobSearchExt]", label, "inserted");
+            console.log("[ChatGPT-CP]", label, "inserted");
             if (shouldSubmit) {
               setTimeout(async () => {
                 const result = await submit(editor);
-                console.log("[JobSearchExt]", label, "submission completed:", result);
+                console.log("[ChatGPT-CP]", label, "submission completed:", result);
               }, 500);
             }
             return { inserted: true, submitted: false, skipped: false };
@@ -928,7 +928,7 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
             if (r) { clearInterval(timer); resolve(r); }
             else if (++tries >= MAX_TRIES_LOCAL) {
               clearInterval(timer);
-              console.warn("[JobSearchExt]", label, "editor not found — giving up");
+              console.warn("[ChatGPT-CP]", label, "editor not found — giving up");
               alert("Could not auto-insert text. Please paste manually.");
               resolve({ inserted: false, submitted: false, skipped: false });
             }
