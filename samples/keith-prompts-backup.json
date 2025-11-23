@@ -18,7 +18,7 @@
           "enabled": true,
           "id": "action_1761661336339_vaemi",
           "order": 2,
-          "prompt": "Quick fit match for the job position:",
+          "prompt": "Quick fit match for the job position. DO NOT CREATE A COVER LETTER:",
           "shortcut": "Alt+Shift+K",
           "title": "Fit Match"
         },
@@ -26,7 +26,7 @@
           "enabled": true,
           "id": "action_1761661367165_b2bz3",
           "order": 3,
-          "prompt": "Think longer, be critical, and provide a more in-depth fit match for the job posting:",
+          "prompt": "USE A THINKING MODEL. Think longer, be critical, and provide a more in-depth fit match for the job posting. Have the following sections:\n0 - Location & Salary may sure this is a remote job or a job in southeast michigan. If the top salary range is below $190K USD be sure to flag that.\n1. Fit Score - ranking 1.0 - 10.0 of how closely my qualifications match this position\n2. Strengths - list top 5-8 items where I most accurately match the job posting\n3. Gaps - list the key areas where I don't match the job posting. \n4. Gap to Fit - list how I can adjust my resume to improve my fit. Be creative, use high-tech and jargon words, keep the sentences brief.",
           "shortcut": "Alt+Shift+L",
           "title": "Critical Match"
         },
@@ -62,7 +62,7 @@
           "id": "action_1762039291437_e3it4",
           "order": 2,
           "prompt": "Create 5 year post and 5 year future revenue projection of the company listed in this post. No need to provide justifications:",
-          "shortcut": "",
+          "shortcut": "Alt+Shift+R",
           "title": "Company Revenue"
         }
       ],
