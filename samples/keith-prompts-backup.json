@@ -85,7 +85,7 @@
           "title": "Summarize"
         }
       ],
-      "autoSubmit": true,
+      "autoSubmit": false,
       "customGptUrl": "https://chatgpt.com/",
       "id": "menu_1762702068059_mmt53",
       "name": "General",

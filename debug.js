@@ -1,17 +1,17 @@
 // ====== DEBUG LOGGING UTILITY ======
-// Non-persistent debug logging controlled by hamburger menu toggle
-// State is stored in chrome.storage.session (cleared when browser closes)
+// Debug logging controlled by hamburger menu toggle
+// State is stored in chrome.storage.local (persists across extension reloads and browser sessions)
 
 const DEBUG_KEY = 'debugLogging';
 
 // Get current debug state
 async function isDebugEnabled() {
   try {
-    // Use session storage (cleared when browser closes)
-    const result = await chrome.storage.session.get(DEBUG_KEY);
+    // Use local storage (persists across extension reloads)
+    const result = await chrome.storage.local.get(DEBUG_KEY);
     return result[DEBUG_KEY] === true;
   } catch (e) {
-    // session storage not available, default to false
+    // storage not available, default to false
     return false;
   }
 }
@@ -19,7 +19,7 @@ async function isDebugEnabled() {
 // Set debug state
 async function setDebugEnabled(enabled) {
   try {
-    await chrome.storage.session.set({ [DEBUG_KEY]: enabled });
+    await chrome.storage.local.set({ [DEBUG_KEY]: enabled });
   } catch (e) {
     console.error('[Debug] Failed to set debug state:', e);
   }
@@ -43,7 +43,7 @@ isDebugEnabled().then(enabled => {
 // Listen for changes
 try {
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'session' && changes[DEBUG_KEY]) {
+    if (areaName === 'local' && changes[DEBUG_KEY]) {
       cachedDebugState = changes[DEBUG_KEY].newValue === true;
     }
   });

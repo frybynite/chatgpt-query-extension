@@ -1,10 +1,10 @@
 // ====== DEBUG LOGGING ======
 let debugEnabled = false;
 
-// Load debug state from session storage
+// Load debug state from local storage (persists across extension reloads)
 try {
-  if (chrome.storage && chrome.storage.session) {
-    chrome.storage.session.get('debugLogging').then(result => {
+  if (chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get('debugLogging').then(result => {
       debugEnabled = result.debugLogging === true;
     }).catch(() => {
       debugEnabled = false;
@@ -12,13 +12,13 @@ try {
 
     // Listen for debug state changes
     chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === 'session' && changes.debugLogging) {
+      if (areaName === 'local' && changes.debugLogging) {
         debugEnabled = changes.debugLogging.newValue === true;
       }
     });
   }
 } catch (e) {
-  // Session storage not available, debug disabled
+  // Storage not available, debug disabled
   debugEnabled = false;
 }
 
@@ -31,6 +31,17 @@ function debugLog(...args) {
 // ====== STATE ======
 // Store shortcuts as parsed objects: {modifiers: Set, key: string, actionId: object}
 let shortcuts = [];
+
+// ====== DIAGNOSTICS ======
+const diagnostics = {
+  scriptLoadTime: Date.now(),
+  listenerRegisteredTime: null,
+  shortcutsRequestTime: null,
+  shortcutsLoadedTime: null,
+  shortcutsReady: false,
+  missedKeypresses: [],
+  totalKeypresses: 0
+};
 
 // ====== SHORTCUT PARSING ======
 // Parse a shortcut string into modifiers set and key
@@ -116,35 +127,72 @@ function normalizeKeyString(value) {
 
 // ====== LOAD SHORTCUTS FROM BACKGROUND ======
 function loadShortcuts() {
-  chrome.runtime.sendMessage({ type: 'GET_SHORTCUTS' }, (response) => {
-    debugLog('[Shortcuts] Received shortcuts from background:', response);
-    if (response && response.shortcuts) {
-      shortcuts = [];
-      // Response format: [["shortcutString", actionId], ...]
-      response.shortcuts.forEach(([shortcutString, actionId]) => {
-        const parsed = parseShortcut(shortcutString);
-        if (parsed) {
-          const shortcutObj = {
-            modifiers: parsed.modifiers,
-            key: parsed.key,
-            actionId: actionId
-          };
-          debugLog('[Shortcuts] Parsed Shortcut:', {
-            modifiers: Array.from(shortcutObj.modifiers),
-            key: shortcutObj.key,
-            actionId: shortcutObj.actionId
-          });
-          shortcuts.push(shortcutObj);
-        }
-        else{
-          console.warn('[Shortcuts] Invalid shortcut:', shortcutString);
-        }
-      });
-      debugLog('[Shortcuts] Loaded', shortcuts.length, 'shortcuts');
-    } else {
-      console.warn('[Shortcuts] No shortcuts received from background');
-      shortcuts = [];
-    }
+  diagnostics.shortcutsRequestTime = Date.now();
+  debugLog('[Shortcuts] GET_SHORTCUTS sent at', diagnostics.shortcutsRequestTime - diagnostics.scriptLoadTime, 'ms');
+
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'GET_SHORTCUTS' }, (response) => {
+      debugLog('[Shortcuts] Received shortcuts from background:', response);
+      if (response && response.shortcuts) {
+        shortcuts = [];
+        // Response format: [["shortcutString", actionId], ...]
+        response.shortcuts.forEach(([shortcutString, actionId]) => {
+          const parsed = parseShortcut(shortcutString);
+          if (parsed) {
+            const shortcutObj = {
+              modifiers: parsed.modifiers,
+              key: parsed.key,
+              actionId: actionId
+            };
+            debugLog('[Shortcuts] Parsed Shortcut:', {
+              modifiers: Array.from(shortcutObj.modifiers),
+              key: shortcutObj.key,
+              actionId: shortcutObj.actionId
+            });
+            shortcuts.push(shortcutObj);
+          }
+          else{
+            console.warn('[Shortcuts] Invalid shortcut:', shortcutString);
+          }
+        });
+        debugLog('[Shortcuts] Loaded', shortcuts.length, 'shortcuts');
+      } else {
+        console.warn('[Shortcuts] No shortcuts received from background');
+        shortcuts = [];
+      }
+
+      // Diagnostic tracking
+      diagnostics.shortcutsLoadedTime = Date.now();
+      diagnostics.shortcutsReady = true;
+
+      const loadTime = diagnostics.shortcutsLoadedTime - diagnostics.shortcutsRequestTime;
+      const vulnerabilityWindow = diagnostics.listenerRegisteredTime
+        ? diagnostics.shortcutsLoadedTime - diagnostics.listenerRegisteredTime
+        : 0;
+
+      debugLog('[Shortcuts] Load time:', loadTime, 'ms');
+      if (diagnostics.listenerRegisteredTime) {
+        debugLog('[Shortcuts] Vulnerability window:', vulnerabilityWindow, 'ms');
+      }
+
+      if (diagnostics.missedKeypresses.length > 0) {
+        console.warn('[Shortcuts] ⚠️ RACE CONDITION DETECTED:',
+          diagnostics.missedKeypresses.length, 'keypresses occurred before shortcuts loaded');
+        console.table(diagnostics.missedKeypresses);
+      }
+
+      if (diagnostics.listenerRegisteredTime) {
+        console.table({
+          'Script → Listener': (diagnostics.listenerRegisteredTime - diagnostics.scriptLoadTime) + 'ms',
+          'Listener → Request': (diagnostics.shortcutsRequestTime - diagnostics.listenerRegisteredTime) + 'ms',
+          'Request → Loaded': loadTime + 'ms',
+          'Total Vulnerability': vulnerabilityWindow + 'ms',
+          'Missed Keys': diagnostics.missedKeypresses.length
+        });
+      }
+
+      resolve();
+    });
   });
 }
 
@@ -167,7 +215,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // ====== KEYBOARD LISTENER ======
-document.addEventListener('keydown', (event) => {
+function handleKeydown(event) {
   // Don't interfere with input fields
   const target = event.target;
   if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
@@ -175,13 +223,29 @@ document.addEventListener('keydown', (event) => {
   }
 
   const pressed = extractKeyPress(event);
-  debugLog('[Shortcuts] Key pressed:', Array.from(pressed.modifiers).join('+') + '+' + pressed.key);
+  diagnostics.totalKeypresses++;
+
+  debugLog('[Shortcuts] Keypress #' + diagnostics.totalKeypresses,
+    Array.from(pressed.modifiers).join('+') + '+' + pressed.key);
+  debugLog('[Shortcuts] Ready:', diagnostics.shortcutsReady, 'Array length:', shortcuts.length);
+
+  // Detect race condition - keypress while shortcuts not ready
+  if (!diagnostics.shortcutsReady || shortcuts.length === 0) {
+    const missedKeypress = {
+      time: (Date.now() - diagnostics.scriptLoadTime) + 'ms',
+      pressed: Array.from(pressed.modifiers).join('+') + '+' + pressed.key,
+      arrayLength: shortcuts.length,
+      ready: diagnostics.shortcutsReady
+    };
+    diagnostics.missedKeypresses.push(missedKeypress);
+    console.warn('[Shortcuts] ⚠️ POTENTIAL MISS:', missedKeypress);
+  }
 
   // Find matching shortcut by checking modifier sets and key
   const matchedShortcut = shortcuts.find(shortcut => {
     // Check if keys match
     if (shortcut.key !== pressed.key) return false;
-    
+
     // Check if modifier sets match exactly (same modifiers, no extras, no missing)
     return modifierSetsMatch(shortcut.modifiers, pressed.modifiers);
   });
@@ -218,7 +282,24 @@ document.addEventListener('keydown', (event) => {
       }
     });
   }
-}, true); // Use capture phase to intercept early
+}
 
 // ====== INITIALIZATION ======
-loadShortcuts();
+(async function initializeShortcuts() {
+  try {
+    // Load shortcuts first
+    await loadShortcuts();
+
+    // Register listener AFTER shortcuts are loaded
+    diagnostics.listenerRegisteredTime = Date.now();
+    debugLog('[Shortcuts] Shortcuts loaded, registering listener');
+
+    document.addEventListener('keydown', handleKeydown, true); // Use capture phase
+
+    debugLog('[Shortcuts] Initialization complete - shortcuts ready');
+  } catch (error) {
+    console.error('[Shortcuts] Failed to initialize:', error);
+    // Fallback: register listener anyway to avoid breaking extension
+    document.addEventListener('keydown', handleKeydown, true);
+  }
+})();

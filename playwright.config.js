@@ -13,7 +13,7 @@ export default defineConfig({
   testDir: './tests',
 
   // Maximum time one test can run
-  timeout: 60 * 1000, // 60 seconds
+  timeout: 15 * 1000, // 15 seconds
 
   // Test execution settings
   fullyParallel: false, // Run tests in sequence for extension testing
