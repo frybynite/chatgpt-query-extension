@@ -1,16 +1,19 @@
-ChatGPT Custom Prompts transforms how you interact with ChatGPT. Select any text on any webpage, press a keyboard shortcut or use the context menu, and instantly send it to your custom ChatGPT with pre-configured prompts. No more copying, switching tabs, pasting, and retyping the same instructions.
+AI Custom Prompts transforms how you interact with AI assistants. Select any text on any webpage, press a keyboard shortcut or use the context menu, and instantly send it to ChatGPT, Gemini, a custom GPT, or a Gemini Gem with pre-configured prompts. No more copying, switching tabs, pasting, and retyping the same instructions.
 
-Perfect for job seekers analyzing postings, researchers summarizing articles, developers reviewing code, or anyone using custom GPTs regularly. Create unlimited actions with personalized prompts, assign shortcuts to each, and process text through multiple prompts simultaneously with "Run All Actions."
+Perfect for job seekers analyzing postings, researchers summarizing articles, developers reviewing code, or anyone using AI assistants regularly. Create unlimited actions with personalized prompts, assign shortcuts to each, and process text through multiple prompts simultaneously with "Run All Actions."
 
 Everything is stored locally with full import/export support for backups and sharing. No data collection, no tracking, no external servers - just a fast, privacy-focused productivity tool.
 
 ✨ KEY FEATURES
 
+🌐 Multi-Provider Support (NEW in v4.0.0)
+Works with ChatGPT (chatgpt.com), ChatGPT custom GPTs, Google Gemini (gemini.google.com/app), and Gemini Gems. Configure each menu to target a different AI assistant.
+
 🎯 Custom Prompts
 Create unlimited custom actions with personalized prompts. Whether you're analyzing job postings, summarizing articles, or processing code, configure prompts that match your needs.
 
 ⌨️ Keyboard Shortcuts
-Assign custom keyboard shortcuts to any action. Select text, press your shortcut (e.g., Alt+Shift+J), and watch it instantly appear in ChatGPT with your custom prompt.
+Assign custom keyboard shortcuts to any action. Select text, press your shortcut, and watch it instantly appear in your AI assistant with your custom prompt.
 
 🚀 Run All Actions
 Process selected text through multiple prompts simultaneously in parallel tabs. Perfect for comprehensive analysis from different angles.
@@ -18,15 +21,14 @@ Process selected text through multiple prompts simultaneously in parallel tabs. 
 ⚙️ Fully Configurable
 • Add, edit, remove, and reorder actions with drag-and-drop
 • Customize keyboard shortcuts for Mac and Windows
-• Configure context menu titles
-• Enable/disable auto-submit
+• Enable/disable auto-submit per menu
 • Hamburger menu for quick access to settings and tools
 
 🔄 Smart Tab Management
-Automatically opens or focuses your ChatGPT tab. No manual tab juggling.
+Automatically opens or focuses your AI assistant tab. No manual tab juggling.
 
 📤 Import/Export & Settings Menu
-Access export, import, and debug logging through the convenient hamburger menu (☰). Backup your configuration to JSON, share it with colleagues, or import configurations from others. Debug logging helps troubleshoot issues when needed.
+Access export, import, and debug logging through the convenient hamburger menu (☰). Backup your configuration to JSON, share it with colleagues, or import configurations from others.
 
 🎓 PERFECT FOR
 
@@ -35,23 +37,23 @@ Access export, import, and debug logging through the convenient hamburger menu (
 • Writers getting feedback and editing suggestions
 • Developers analyzing code and documentation
 • Students processing study materials
-• Anyone who frequently uses ChatGPT with custom GPTs
+• Anyone who frequently uses ChatGPT or Gemini
 
 💡 HOW IT WORKS
 
-1. Configure your custom ChatGPT URL (https://help.openai.com/en/articles/8554397-creating-a-gpt)
-  * Once completed, copy the URL of your custom GPT
-2. Create actions with custom prompts that will be sent to your custom GPT along with the selected text
+1. Configure your AI assistant URL:
+  * ChatGPT: https://chatgpt.com/ or a custom GPT URL
+  * Gemini: https://gemini.google.com/app or a Gem URL (gemini.google.com/gem/<id>)
+2. Create actions with custom prompts
   * In browser enter chrome://extensions/
-  * Find ChatGPT Custom Prompts
-  * Click Details
-  * Scroll down to choose Extension Options
-  * Fill out options form, including your custom GPT URL and desired actions
+  * Find AI Custom Prompts
+  * Click Details → Extension Options
+  * Fill out the options form, including your AI URL and desired actions
   * Save your configuration
 3. Navigate to a webpage and select any text
-  * NOTE that if you want to use on an open tab it is best to refresh that tab after saving any settings changes
-4. Right-click or use keyboard shortcut to execute that action / prompt
-5. A new window is created with your prompt text and selected text for your Custom ChatGPT which can optionally be submitted automatically.
+  * NOTE: refresh any open tabs after saving settings changes
+4. Right-click or use keyboard shortcut to execute that action
+5. A tab opens with your prompt and selected text injected — optionally auto-submitted
 
 🔒 PRIVACY & SECURITY
 
@@ -64,9 +66,9 @@ Access export, import, and debug logging through the convenient hamburger menu (
 
 📋 REQUIREMENTS
 
-• ChatGPT Plus subscription (for custom GPTs)
-• A custom GPT configured for your use case
 • Chrome browser
+• A Google account (for Gemini features)
+• ChatGPT Plus subscription (for custom GPTs only)
 
 🔗 LINKS
 
@@ -82,7 +84,7 @@ Open an issue on GitHub or check the documentation in the repository.
 
 ---
 
-*ChatGPT Custom Prompts is not affiliated with OpenAI. ChatGPT is a trademark of OpenAI.*
+*AI Custom Prompts is not affiliated with OpenAI or Google. ChatGPT is a trademark of OpenAI. Gemini is a trademark of Google.*
 
 
 Privacy Policy URL: https://github.com/frybynite/chatgpt-query-extension/blob/main/PRIVACY.md
@@ -93,7 +95,7 @@ Homepage URL: https://github.com/frybynite/chatgpt-query-extension
 
 * Why does this extension need `<all_urls>` content script permission?
 
-The extension provides customizable keyboard shortcuts that allow users to trigger custom ChatGPT prompts from any website. For these shortcuts to work consistently across all websites (job boards, documentation sites, emails, social media, etc.), the lightweight keyboard listener must be available on all pages.
+The extension provides customizable keyboard shortcuts that allow users to trigger custom AI prompts from any website. For these shortcuts to work consistently across all websites (job boards, documentation sites, emails, social media, etc.), the lightweight keyboard listener must be available on all pages.
 
 The content script:
 - Only listens for keyboard shortcuts
@@ -108,14 +110,14 @@ https://github.com/frybynite/chatgpt-query-extension/blob/main/PERMISSIONS_JUSTI
 
 
 Tags/Keywords
-chatgpt, productivity, automation, keyboard shortcuts, custom prompts, ai assistant, workflow, text processing, custom gpt, job search, chatgpt plus
+chatgpt, gemini, ai assistant, productivity, automation, keyboard shortcuts, custom prompts, workflow, text processing, custom gpt, gemini gem, job search
 
 Target Audience
 
-• ChatGPT Plus subscribers
-• Power users who frequently interact with ChatGPT
-• Professionals using ChatGPT for work
-• Job seekers using ChatGPT for applications
+• ChatGPT and Gemini users
+• Power users who frequently interact with AI assistants
+• Professionals using AI for work
+• Job seekers using AI for applications
 • Researchers and students
 • Developers and technical writers
 

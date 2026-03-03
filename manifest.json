@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Custom Prompts",
-  "version": "3.2.5",
-  "description": "Send selected text to your custom ChatGPT with custom action prompts. Configure actions, shortcuts, and automate your AI workflow.",
+  "name": "AI Custom Prompts",
+  "version": "4.0.0",
+  "description": "Send selected text to ChatGPT, Gemini, or custom GPTs/Gems with configurable prompts and shortcuts. Supports multiple AI providers.",
   "homepage_url": "https://github.com/frybynite/chatgpt-query-extension",
   "action": {
     "default_popup": "popup.html",
@@ -12,7 +12,7 @@
       "48": "icons/icon-48.png",
       "128": "icons/icon-128.png"
     },
-    "default_title": "ChatGPT Custom Prompts"
+    "default_title": "AI Custom Prompts"
   },
   "permissions": [
     "contextMenus",

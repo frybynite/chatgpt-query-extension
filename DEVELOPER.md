@@ -1,6 +1,6 @@
 # Developer Documentation
 
-This document contains technical details, architecture information, and development instructions for the ChatGPT Custom Prompts Chrome extension.
+This document contains technical details, architecture information, and development instructions for the AI Custom Prompts Chrome extension.
 
 ## Table of Contents
 
@@ -542,7 +542,7 @@ If automated publishing fails:
 
 **Access**:
 1. Go to `chrome://extensions/`
-2. Find "ChatGPT Custom Prompts"
+2. Find "AI Custom Prompts"
 3. Click "service worker" link
 4. View console logs
 

@@ -26,7 +26,7 @@ test.describe('UI Tests - Popup', () => {
     // Verify extension name is displayed
     const title = popupPage.locator('.popup-title h1');
     await expect(title).toBeVisible();
-    await expect(title).toHaveText('ChatGPT Custom Prompts');
+    await expect(title).toHaveText('AI Custom Prompts');
     console.log('✓ Extension name is displayed');
 
     // Verify version is displayed and matches manifest
@@ -73,7 +73,7 @@ test.describe('UI Tests - Popup', () => {
     // Verify options page has expected content
     const header = optionsPage.locator('header h1');
     await expect(header).toBeVisible();
-    await expect(header).toHaveText('ChatGPT Custom Prompts');
+    await expect(header).toHaveText('AI Custom Prompts');
     console.log('✓ Options page content loaded correctly');
   });
 

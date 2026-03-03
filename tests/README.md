@@ -1,6 +1,6 @@
 # Test Suite
 
-Automated tests for the ChatGPT Custom Prompts Chrome Extension using Playwright.
+Automated tests for the AI Custom Prompts Chrome Extension using Playwright.
 
 ## Setup Complete ✅
 

@@ -1,9 +1,24 @@
 # Changelog
 
-All notable changes to ChatGPT Custom Prompts extension will be documented in this file.
+All notable changes to AI Custom Prompts extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [4.0.0] - 2026-03-02
+
+### Added
+- **Google Gemini support**: set a menu's URL to `https://gemini.google.com/app` to use standard Gemini
+- **Gemini Gems support**: use `https://gemini.google.com/gem/<id>` to target a specific Gem
+- **Provider config table** (`PROVIDERS`) in background.js — clean per-provider dispatch of DOM selectors and title-match strings
+- `gemini.google.com/*` added to extension `host_permissions`
+
+### Changed
+- **Renamed to "AI Custom Prompts"** to reflect multi-provider support
+- Options page "ChatGPT URL" field renamed to "AI Assistant URL"
+- URL validation now accepts `chatgpt.com` and `gemini.google.com` domains
+- Extension description updated to mention Gemini
+- Tests now run in headless mode by default
 
 ## [3.2.3] - 2025-11-23
 
