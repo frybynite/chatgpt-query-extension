@@ -26,7 +26,7 @@ export const test = base.extend({
     // Launch browser with extension loaded
     // Use chromium channel for extension support in headless mode (Playwright 1.49+)
     const context = await chromium.launchPersistentContext(userDataDir, {
-      headless: !!process.env.CI, // Use headless mode in CI environment
+      headless: true,
       channel: 'chromium', // Required for extensions in headless mode
       args: [
         `--disable-extensions-except=${extensionPath}`,
