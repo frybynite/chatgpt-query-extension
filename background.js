@@ -380,7 +380,7 @@ async function executeAction(action, selectionText, menu, config) {
 
     // Attempt #1
     debugLog('[Background] Attempting to inject prompt (attempt #1)...');
-    const ok1 = await tryInjectWithTiming(tabId, prompt, {
+    const ok1 = await tryInjectWithTiming(tabId, prompt, menu.customGptUrl, {
       label: `${action.id}-attempt#1`,
       autoSubmit: menu.autoSubmit,
       reqId
@@ -389,7 +389,7 @@ async function executeAction(action, selectionText, menu, config) {
 
     // Retry if needed
     if (!ok1) {
-      setTimeout(() => tryInjectWithTiming(tabId, prompt, {
+      setTimeout(() => tryInjectWithTiming(tabId, prompt, menu.customGptUrl, {
         label: `${action.id}-attempt#2`,
         autoSubmit: menu.autoSubmit,
         reqId
@@ -399,7 +399,7 @@ async function executeAction(action, selectionText, menu, config) {
     console.warn('[Background] Failed to execute action:', action.id, e);
     const t = await chrome.tabs.create({ url: menu.customGptUrl, active: true });
     const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setTimeout(() => tryInjectWithTiming(t.id, prompt, {
+    setTimeout(() => tryInjectWithTiming(t.id, prompt, menu.customGptUrl, {
       label: `${action.id}-fallback`,
       autoSubmit: menu.autoSubmit,
       reqId
@@ -416,14 +416,14 @@ async function executeActionV2(action, selectionText, config) {
 
     const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-    const ok1 = await tryInjectWithTiming(tabId, prompt, {
+    const ok1 = await tryInjectWithTiming(tabId, prompt, config.globalSettings?.customGptUrl, {
       label: `${action.id}-attempt#1`,
       autoSubmit: config.globalSettings?.autoSubmit,
       reqId
     });
 
     if (!ok1) {
-      setTimeout(() => tryInjectWithTiming(tabId, prompt, {
+      setTimeout(() => tryInjectWithTiming(tabId, prompt, config.globalSettings?.customGptUrl, {
         label: `${action.id}-attempt#2`,
         autoSubmit: config.globalSettings?.autoSubmit,
         reqId
@@ -433,7 +433,7 @@ async function executeActionV2(action, selectionText, config) {
     console.warn('[Background] Failed to execute action:', action.id, e);
     const t = await chrome.tabs.create({ url: config.globalSettings?.customGptUrl, active: true });
     const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setTimeout(() => tryInjectWithTiming(t.id, prompt, {
+    setTimeout(() => tryInjectWithTiming(t.id, prompt, config.globalSettings?.customGptUrl, {
       label: `${action.id}-fallback`,
       autoSubmit: config.globalSettings?.autoSubmit,
       reqId
@@ -479,7 +479,7 @@ async function runAllActions(selectionText, menu, config) {
       const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
       // Attempt #1
-      const ok1 = await tryInjectWithTiming(tabId, prompt, {
+      const ok1 = await tryInjectWithTiming(tabId, prompt, menu.customGptUrl, {
         label: `runAll-${action.id}-attempt#1`,
         autoSubmit: menu.autoSubmit,
         reqId
@@ -487,7 +487,7 @@ async function runAllActions(selectionText, menu, config) {
 
       // Retry if needed
       if (!ok1) {
-        setTimeout(() => tryInjectWithTiming(tabId, prompt, {
+        setTimeout(() => tryInjectWithTiming(tabId, prompt, menu.customGptUrl, {
           label: `runAll-${action.id}-attempt#2`,
           autoSubmit: menu.autoSubmit,
           reqId
@@ -534,14 +534,14 @@ async function runAllActionsV2(selectionText, config) {
     try {
       const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-      const ok1 = await tryInjectWithTiming(tabId, prompt, {
+      const ok1 = await tryInjectWithTiming(tabId, prompt, config.globalSettings?.customGptUrl, {
         label: `runAll-${action.id}-attempt#1`,
         autoSubmit: config.globalSettings?.autoSubmit,
         reqId
       });
 
       if (!ok1) {
-        setTimeout(() => tryInjectWithTiming(tabId, prompt, {
+        setTimeout(() => tryInjectWithTiming(tabId, prompt, config.globalSettings?.customGptUrl, {
           label: `runAll-${action.id}-attempt#2`,
           autoSubmit: config.globalSettings?.autoSubmit,
           reqId
@@ -774,13 +774,14 @@ function createModalOverlayFunction() {
 }
 
 // ====== INJECTION (returns true if inserted/submitted, else false) ======
-async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = false, reqId = "" } = {}) {
+async function tryInjectWithTiming(tabId, prompt, tabUrl, { label = "", autoSubmit = false, reqId = "" } = {}) {
   debugLog('[Background] tryInjectWithTiming called:', { tabId, label, autoSubmit, reqId, promptLength: prompt.length });
+  const provider = getProviderForUrl(tabUrl);
   try {
     debugLog('[Background] Executing script in tab', tabId);
     const results = await chrome.scripting.executeScript({
       target: { tabId },
-      func: (text, label, shouldSubmit, requestId) => {
+      func: (text, label, shouldSubmit, requestId, inputSels, sendSels) => {
         console.log("[ChatGPT-CP]", label, "inject start (debounced)", { requestId, shouldSubmit });
 
         // ---- page-level debounce: if same reqId already handled in last 10s, skip ----
@@ -793,16 +794,7 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
         }
         g.lastReqId = requestId; g.lastReqAt = now;
 
-        const SELECTORS_ORDERED = [
-          "form div[contenteditable='true'][data-testid^='composer']",
-          "form div[contenteditable='true'][role='textbox']",
-          "div[contenteditable='true'][data-testid^='composer']",
-          "div[contenteditable='true'][role='textbox']",
-          "form [contenteditable='true']",
-          "[contenteditable='true']",
-          "form textarea",
-          "textarea"
-        ];
+        const SELECTORS_ORDERED = inputSels;
         const MAX_TRIES = 40, INTERVAL = 200;
 
         function isVisible(el) {
@@ -895,14 +887,7 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
           });
         }
         function findSendButton() {
-          const sels = [
-            "form button[data-testid='send-button']",
-            "button[data-testid='send-button']",
-            "form button[aria-label*='send' i]",
-            "button[aria-label*='send' i]",
-            "form button[type='submit']",
-            "button[type='submit']"
-          ];
+          const sels = sendSels;
           for (const s of sels) {
             const c = queryDeepAll(document, s).filter(isVisible);
             if (c.length) { console.log("[ChatGPT-CP]", label, "send button via", s, c[0]); return c[0]; }
@@ -985,7 +970,7 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
           }, INTERVAL);
         });
       },
-      args: [prompt, label, autoSubmit, reqId],
+      args: [prompt, label, autoSubmit, reqId, provider.inputSelectors, provider.sendButtonSelectors],
       world: "MAIN" // ensure we're in the page's main world
     });
 
@@ -997,11 +982,6 @@ async function tryInjectWithTiming(tabId, prompt, { label = "", autoSubmit = fal
     return ok;
   } catch (e) {
     console.error("[Background] executeScript failed:", e);
-    try {
-      await chrome.tabs.update(tabId, {
-        url: `https://chatgpt.com/?q=${encodeURIComponent("Could not auto-insert text. Please paste below.")}`
-      });
-    } catch {}
     return false;
   }
 }
