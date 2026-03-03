@@ -457,7 +457,7 @@ async function runAllActions(selectionText, menu, config) {
         url: menu.customGptUrl,
         active: false
       });
-      const tabId = await waitForTitleMatch(tab.id, config.globalSettings.gptTitleMatch, 20000);
+      const tabId = await waitForTitleMatch(tab.id, getProviderForUrl(menu.customGptUrl).titleMatch, 20000);
       debugLog(`[Background] Created tab ${tabId} for ${action.title}`);
       return { action, tabId };
     } catch (e) {
@@ -565,9 +565,9 @@ async function openOrFocusGptTab(customGptUrl, clearContext) {
   });
   debugLog('[Background] Tab created with ID:', created.id);
 
-  // Load config to get gptTitleMatch
-  const config = await loadConfig();
-  const titleMatch = config.globalSettings?.gptTitleMatch || 'ChatGPT';
+  // Derive titleMatch from URL via provider config
+  const provider = getProviderForUrl(customGptUrl);
+  const titleMatch = provider.titleMatch;
   debugLog('[Background] Waiting for title to match:', titleMatch);
 
   // Wait for tab to be ready before returning
