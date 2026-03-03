@@ -19,6 +19,56 @@ function invalidateCache() {
   cachedConfig = null;
 }
 
+// ====== PROVIDER CONFIG TABLE ======
+const PROVIDERS = {
+  'chatgpt.com': {
+    titleMatch: 'ChatGPT',
+    inputSelectors: [
+      "form div[contenteditable='true'][data-testid^='composer']",
+      "form div[contenteditable='true'][role='textbox']",
+      "div[contenteditable='true'][data-testid^='composer']",
+      "div[contenteditable='true'][role='textbox']",
+      "form [contenteditable='true']",
+      "[contenteditable='true']",
+      "form textarea",
+      "textarea"
+    ],
+    sendButtonSelectors: [
+      "form button[data-testid='send-button']",
+      "button[data-testid='send-button']",
+      "form button[aria-label*='send' i]",
+      "button[aria-label*='send' i]",
+      "form button[type='submit']",
+      "button[type='submit']"
+    ]
+  },
+  'gemini.google.com': {
+    titleMatch: 'Gemini',
+    // Gemini uses Quill editor inside <rich-textarea> web component
+    // queryDeepAll() handles shadow DOM traversal automatically
+    inputSelectors: [
+      "rich-textarea .ql-editor",
+      "div.ql-editor[contenteditable='true']",
+      "rich-textarea [contenteditable='true']",
+      "[contenteditable='true'][role='textbox']",
+      "[contenteditable='true']"
+    ],
+    sendButtonSelectors: [
+      "button[aria-label='Send message']",
+      "button.send-button",
+      "button[aria-label*='send' i]",
+      "button[type='submit']"
+    ]
+  }
+};
+
+function getProviderForUrl(url) {
+  for (const [domain, providerConfig] of Object.entries(PROVIDERS)) {
+    if (url?.includes(domain)) return providerConfig;
+  }
+  return PROVIDERS['chatgpt.com']; // safe fallback
+}
+
 // ====== INSTALLATION & MIGRATION ======
 chrome.runtime.onInstalled.addListener(async () => {
   // Migrate config if needed (v1.6.0 → v2.0.0)
