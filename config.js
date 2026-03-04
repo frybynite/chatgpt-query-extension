@@ -322,6 +322,13 @@ function validateV3Config(config) {
           }
         }
 
+        // Optional per-action URL override validation
+        if (action.customGptUrl && action.customGptUrl.trim()) {
+          if (!ALLOWED_MENU_URL_PREFIXES.some(prefix => action.customGptUrl.startsWith(prefix))) {
+            errors.push(`${actionLabel}: Action URL override must start with https://chatgpt.com or https://gemini.google.com`);
+          }
+        }
+
         // Boolean and number validations
         if (typeof action.enabled !== 'boolean') {
           errors.push(`${actionLabel}: enabled must be true or false`);
