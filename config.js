@@ -134,8 +134,9 @@ function validateConfig(config) {
   if (!config.globalSettings) {
     errors.push('Missing globalSettings');
   } else {
-    if (!config.globalSettings.customGptUrl?.startsWith('https://chatgpt.com')) {
-      errors.push('Custom GPT URL must start with https://chatgpt.com');
+    const ALLOWED_URL_PREFIXES = ['https://chatgpt.com', 'https://gemini.google.com'];
+    if (!ALLOWED_URL_PREFIXES.some(prefix => config.globalSettings.customGptUrl?.startsWith(prefix))) {
+      errors.push('Custom GPT URL must start with https://chatgpt.com or https://gemini.google.com');
     }
     if (!config.globalSettings.gptTitleMatch?.trim()) {
       errors.push('GPT Title Match is required');
@@ -253,8 +254,9 @@ function validateV3Config(config) {
     }
 
     // Custom GPT URL validation
-    if (!menu.customGptUrl?.startsWith('https://chatgpt.com')) {
-      errors.push(`${menuLabel}: Custom GPT URL must start with https://chatgpt.com`);
+    const ALLOWED_MENU_URL_PREFIXES = ['https://chatgpt.com', 'https://gemini.google.com'];
+    if (!ALLOWED_MENU_URL_PREFIXES.some(prefix => menu.customGptUrl?.startsWith(prefix))) {
+      errors.push(`${menuLabel}: Custom GPT URL must start with https://chatgpt.com or https://gemini.google.com`);
     }
 
     // Boolean validations

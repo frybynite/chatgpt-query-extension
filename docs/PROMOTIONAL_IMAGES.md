@@ -27,7 +27,7 @@ Use the extension's brand colors from the icon:
 
 **Small Tile (440×280):**
 - Extension icon (48px or 64px)
-- Extension name: "ChatGPT Custom Prompts"
+- Extension name: "AI Custom Prompts"
 - Key feature or tagline: "Automate Your AI Workflow"
 - Keep it simple and readable at small sizes
 
@@ -75,7 +75,7 @@ Use the extension's brand colors from the icon:
 
 ```
 ┌─────────────────────────────────────┐
-│  [Icon]  ChatGPT Custom Prompts     │
+│  [Icon]  AI Custom Prompts     │
 │                                     │
 │  Automate Your AI Workflow          │
 │  with Custom Prompts & Shortcuts    │
@@ -94,7 +94,7 @@ Use the extension's brand colors from the icon:
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                                                          │
-│   [Large Icon]   ChatGPT Custom Prompts                  │
+│   [Large Icon]   AI Custom Prompts                  │
 │                  Streamline your AI workflow             │
 │                                                          │
 │   ⚡ Custom Actions    ⌨️ Shortcuts    📤 Export         │
@@ -148,7 +148,7 @@ If you're short on time, you can use just the icon with text:
 **Small Tile (440×280):**
 1. Solid gradient background
 2. Icon (64px) centered
-3. "ChatGPT Custom Prompts" below
+3. "AI Custom Prompts" below
 4. That's it!
 
 **Marquee (1400×560):**

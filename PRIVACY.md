@@ -1,10 +1,10 @@
-# Privacy Policy for ChatGPT Custom Prompts
+# Privacy Policy for AI Custom Prompts
 
 **Last Updated:** October 23, 2025
 
 ## Overview
 
-ChatGPT Custom Prompts is a Chrome extension that helps you send selected text to your custom ChatGPT assistant with configurable prompts and keyboard shortcuts. This privacy policy explains how the extension handles your data.
+AI Custom Prompts is a Chrome extension that helps you send selected text to AI assistants (ChatGPT, Gemini, custom GPTs, and Gemini Gems) with configurable prompts and keyboard shortcuts. This privacy policy explains how the extension handles your data.
 
 ## Data Collection and Storage
 
@@ -93,4 +93,4 @@ For questions or concerns about this privacy policy, please:
 
 ## Consent
 
-By installing and using ChatGPT Custom Prompts, you consent to this privacy policy.
+By installing and using AI Custom Prompts, you consent to this privacy policy.

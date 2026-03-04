@@ -1,6 +1,6 @@
 # Chrome Web Store Submission Checklist
 
-Use this checklist to ensure you're ready to submit ChatGPT Custom Prompts to the Chrome Web Store.
+Use this checklist to ensure you're ready to submit AI Custom Prompts to the Chrome Web Store.
 
 ## Phase 1: Pre-Submission Preparation
 
@@ -63,7 +63,7 @@ Use this checklist to ensure you're ready to submit ChatGPT Custom Prompts to th
 - [ ] Wait for upload to complete and initial validation
 
 ### Store Listing - Basic Info 📝
-- [ ] **Extension name:** ChatGPT Custom Prompts
+- [ ] **Extension name:** AI Custom Prompts
 - [ ] **Summary:** (Copy from `STORE_LISTING.md` - Short Description)
 - [ ] **Detailed description:** (Copy from `STORE_LISTING.md` - Detailed Description)
 - [ ] **Category:** Productivity
@@ -231,7 +231,7 @@ When users contact you for support, use this template:
 ```
 Hi [Name],
 
-Thank you for using ChatGPT Custom Prompts!
+Thank you for using AI Custom Prompts!
 
 [Answer their question]
 

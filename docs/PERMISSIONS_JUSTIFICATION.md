@@ -1,6 +1,6 @@
 # Chrome Web Store - Permissions Justification
 
-This document explains why ChatGPT Custom Prompts requires each permission.
+This document explains why AI Custom Prompts requires each permission.
 
 ## Requested Permissions
 

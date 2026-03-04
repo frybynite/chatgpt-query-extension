@@ -1,6 +1,6 @@
 # Chrome Web Store Submission Package
 
-This directory contains everything you need to submit ChatGPT Custom Prompts to the Chrome Web Store.
+This directory contains everything you need to submit AI Custom Prompts to the Chrome Web Store.
 
 ## 📋 Quick Start
 
@@ -93,7 +93,7 @@ chmod +x build.sh
 ## 📝 Store Listing Quick Copy
 
 ### Name
-ChatGPT Custom Prompts
+AI Custom Prompts
 
 ### Short Description
 Send selected text to ChatGPT with custom prompts. Configure actions, shortcuts, and automate your AI workflow.

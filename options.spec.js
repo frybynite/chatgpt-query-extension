@@ -12,7 +12,7 @@ const path = require('path');
  * @param {string} extensionName - The name of the extension to find
  * @returns {Promise<{browser, context, page, extensionId}>} Browser objects and extension ID
  */
-async function navigateToExtensionConfig(extensionName = 'ChatGPT Custom Prompts') {
+async function navigateToExtensionConfig(extensionName = 'AI Custom Prompts') {
   const extensionPath = path.join(__dirname);
 
   // Step 1: Launch Chrome with the extension loaded
@@ -80,16 +80,16 @@ test('extension configuration page has correct title', async () => {
 
   try {
     // Use the reusable helper to navigate to the config page
-    const result = await navigateToExtensionConfig('ChatGPT Custom Prompts');
+    const result = await navigateToExtensionConfig('AI Custom Prompts');
     context = result.context;
     const page = result.page;
 
     // Step 5: Verify the title
-    await expect(page).toHaveTitle('ChatGPT Custom Prompts - Configuration');
+    await expect(page).toHaveTitle('AI Custom Prompts - Configuration');
     console.log('✓ Page title validated successfully');
 
     // Additional validations
-    await expect(page.locator('h1')).toHaveText('ChatGPT Custom Prompts');
+    await expect(page.locator('h1')).toHaveText('AI Custom Prompts');
     console.log('✓ H1 header validated successfully');
 
   } finally {
