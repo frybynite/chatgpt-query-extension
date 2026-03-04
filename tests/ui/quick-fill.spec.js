@@ -50,3 +50,82 @@ test.describe('Quick Fill Dropdown - Menu Level', () => {
   });
 
 });
+
+test.describe('Quick Fill Dropdown - Action Level', () => {
+
+  test('QF-07: action Quick Fill dropdown exists and is disabled when checkbox unchecked', async ({ extensionId, context }) => {
+    const page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/options.html`);
+    await page.waitForLoadState('networkidle');
+    await page.locator('#add-menu').click();
+    await page.waitForTimeout(300);
+    await page.locator('#menuName').fill('QF-07 Menu');
+    await page.locator('#customGptUrl').fill('https://chatgpt.com/g/g-qf07');
+    await page.locator('#add-action').click();
+    await page.waitForTimeout(200);
+    const dropdown = page.locator('.action-quick-fill').first();
+    await expect(dropdown).toBeVisible();
+    expect(await dropdown.isDisabled()).toBe(true);
+  });
+
+  test('QF-08: action Quick Fill dropdown is enabled when checkbox is checked', async ({ extensionId, context }) => {
+    const page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/options.html`);
+    await page.waitForLoadState('networkidle');
+    await page.locator('#add-menu').click();
+    await page.waitForTimeout(300);
+    await page.locator('#menuName').fill('QF-08 Menu');
+    await page.locator('#customGptUrl').fill('https://chatgpt.com/g/g-qf08');
+    await page.locator('#add-action').click();
+    await page.waitForTimeout(200);
+    await page.locator('.action-custom-url-enabled').first().check();
+    expect(await page.locator('.action-quick-fill').first().isDisabled()).toBe(false);
+  });
+
+  test('QF-09: unchecking checkbox disables the action Quick Fill dropdown', async ({ extensionId, context }) => {
+    const page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/options.html`);
+    await page.waitForLoadState('networkidle');
+    await page.locator('#add-menu').click();
+    await page.waitForTimeout(300);
+    await page.locator('#menuName').fill('QF-09 Menu');
+    await page.locator('#customGptUrl').fill('https://chatgpt.com/g/g-qf09');
+    await page.locator('#add-action').click();
+    await page.waitForTimeout(200);
+    await page.locator('.action-custom-url-enabled').first().check();
+    await page.locator('.action-custom-url-enabled').first().uncheck();
+    expect(await page.locator('.action-quick-fill').first().isDisabled()).toBe(true);
+  });
+
+  test('QF-10: selecting from action Quick Fill fills the action URL field', async ({ extensionId, context }) => {
+    const page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/options.html`);
+    await page.waitForLoadState('networkidle');
+    await page.locator('#add-menu').click();
+    await page.waitForTimeout(300);
+    await page.locator('#menuName').fill('QF-10 Menu');
+    await page.locator('#customGptUrl').fill('https://chatgpt.com/g/g-qf10');
+    await page.locator('#add-action').click();
+    await page.waitForTimeout(200);
+    await page.locator('.action-custom-url-enabled').first().check();
+    await page.locator('.action-custom-url').first().clear();
+    await page.locator('.action-quick-fill').first().selectOption({ label: 'Gemini' });
+    await expect(page.locator('.action-custom-url').first()).toHaveValue('https://gemini.google.com/app');
+    // Dropdown resets after selection
+    await expect(page.locator('.action-quick-fill').first()).toHaveValue('');
+  });
+
+  test('QF-11: action label shows "(for this action only)" hint', async ({ extensionId, context }) => {
+    const page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/options.html`);
+    await page.waitForLoadState('networkidle');
+    await page.locator('#add-menu').click();
+    await page.waitForTimeout(300);
+    await page.locator('#add-action').click();
+    await page.waitForTimeout(200);
+    const labelText = await page.locator('.action-item .form-group label').nth(2).textContent();
+    expect(labelText).toContain('for this action only');
+    expect(labelText).not.toContain('optional');
+  });
+
+});
