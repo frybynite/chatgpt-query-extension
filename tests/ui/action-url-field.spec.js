@@ -139,7 +139,6 @@ test.describe('Action URL Override - Options UI', () => {
     await page.locator('#add-action').click();
     await page.waitForTimeout(200);
     await page.locator('.action-custom-url-enabled').first().check();
-    expect(await page.locator('.action-custom-url').first().isDisabled()).toBe(false);
     expect(await page.locator('.action-custom-url').first().isEnabled()).toBe(true);
   });
 
