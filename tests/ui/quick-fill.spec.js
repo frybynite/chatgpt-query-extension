@@ -123,7 +123,7 @@ test.describe('Quick Fill Dropdown - Action Level', () => {
     await page.waitForTimeout(300);
     await page.locator('#add-action').click();
     await page.waitForTimeout(200);
-    const labelText = await page.locator('.action-item .form-group label').nth(2).textContent();
+    const labelText = await page.locator('.action-item label:has(.action-custom-url-enabled)').textContent();
     expect(labelText).toContain('for this action only');
     expect(labelText).not.toContain('optional');
   });
