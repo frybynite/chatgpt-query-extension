@@ -33,6 +33,7 @@ test.describe('Action URL Override - Config Validation', () => {
     await page.waitForTimeout(200);
     await page.locator('.action-title').first().fill('GPT Override');
     await page.locator('.action-prompt').first().fill('Explain:');
+    await page.locator('.action-custom-url-enabled').first().check();
     await page.locator('.action-custom-url').first().fill('https://chatgpt.com/g/g-conf02-action');
     await page.locator('#save').click();
     await page.waitForTimeout(500);
@@ -51,6 +52,7 @@ test.describe('Action URL Override - Config Validation', () => {
     await page.waitForTimeout(200);
     await page.locator('.action-title').first().fill('Gemini Override');
     await page.locator('.action-prompt').first().fill('Translate:');
+    await page.locator('.action-custom-url-enabled').first().check();
     await page.locator('.action-custom-url').first().fill('https://gemini.google.com/app');
     await page.locator('#save').click();
     await page.waitForTimeout(500);
@@ -69,6 +71,7 @@ test.describe('Action URL Override - Config Validation', () => {
     await page.waitForTimeout(200);
     await page.locator('.action-title').first().fill('Bad Override');
     await page.locator('.action-prompt').first().fill('Hack:');
+    await page.locator('.action-custom-url-enabled').first().check();
     await page.locator('.action-custom-url').first().fill('https://evil.com/steal');
     await page.locator('#save').click();
     await page.waitForTimeout(500);
@@ -118,6 +121,7 @@ test.describe('Action URL Override - URL Routing', () => {
     await page.waitForTimeout(200);
     await page.locator('.action-title').first().fill('Route02');
     await page.locator('.action-prompt').first().fill('p:');
+    await page.locator('.action-custom-url-enabled').first().check();
     await page.locator('.action-custom-url').first().fill(actionUrl);
     await page.locator('#save').click();
     await page.waitForTimeout(500);
