@@ -113,14 +113,25 @@
               <label for="customGptUrl">
                 AI Assistant URL <span class="required">*</span>
                 <button type="button" class="info-icon" data-info="customGptUrlInfo" aria-label="Show information">ⓘ</button>
-                <span class="inline-hint">(<button type="button" class="url-example" data-url="https://chatgpt.com">ChatGPT</button>, <button type="button" class="url-example" data-url="https://chatgpt.com/g/<<your-gpt-id>>">ChatGPT Custom</button>, <button type="button" class="url-example" data-url="https://gemini.google.com/app">Gemini</button>, <button type="button" class="url-example" data-url="https://gemini.google.com/gem/<<your-gem-id>>">Gemini Gems</button>, <button type="button" class="url-example" data-url="https://claude.ai">Claude</button>, or <button type="button" class="url-example" data-url="https://claude.ai/project/<<your-project-id>>">Claude Project</button>)</span>
+                <span class="inline-hint">(default for all actions)</span>
               </label>
-              <input
-                type="url"
-                id="customGptUrl"
-                placeholder="https://chatgpt.com or https://gemini.google.com/app or https://claude.ai"
-                required
-              />
+              <div class="url-input-row">
+                <input
+                  type="url"
+                  id="customGptUrl"
+                  placeholder="https://chatgpt.com or https://gemini.google.com/app or https://claude.ai"
+                  required
+                />
+                <select id="quickFillMenu" class="quick-fill-select" aria-label="Quick fill URL">
+                  <option value="" disabled selected>— Quick Fill —</option>
+                  <option value="https://chatgpt.com">ChatGPT</option>
+                  <option value="https://chatgpt.com/g/<<your-gpt-id>>">ChatGPT Custom</option>
+                  <option value="https://gemini.google.com/app">Gemini</option>
+                  <option value="https://gemini.google.com/gem/<<your-gem-id>>">Gemini Gems</option>
+                  <option value="https://claude.ai">Claude</option>
+                  <option value="https://claude.ai/project/<<your-project-id>>">Claude Project</option>
+                </select>
+              </div>
               <!-- Info popup -->
               <div id="customGptUrlInfo" class="info-popup">
                 <div class="info-popup-content">
