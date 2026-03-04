@@ -691,21 +691,6 @@ h2 {
   text-decoration: underline;
 }
 
-.url-fill-hint {
-  font-size: 11px;
-  color: #aaa;
-  margin: 4px 0 0 0;
-}
-
-.url-example-list {
-  list-style: none;
-  padding: 0;
-  margin: 6px 0 0 0;
-}
-
-.url-example-list li {
-  margin: 4px 0;
-}
 
 .info-icon {
   background: none;

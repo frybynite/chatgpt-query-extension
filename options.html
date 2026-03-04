@@ -113,7 +113,7 @@
               <label for="customGptUrl">
                 AI Assistant URL <span class="required">*</span>
                 <button type="button" class="info-icon" data-info="customGptUrlInfo" aria-label="Show information">ⓘ</button>
-                <span class="inline-hint">(ChatGPT, ChatGPT Custom, Gemini, Gemini Gems, Claude, or Claude Project)</span>
+                <span class="inline-hint">(<button type="button" class="url-example" data-url="https://chatgpt.com">ChatGPT</button>, <button type="button" class="url-example" data-url="https://chatgpt.com/g/<<your-gpt-id>>">ChatGPT Custom</button>, <button type="button" class="url-example" data-url="https://gemini.google.com/app">Gemini</button>, <button type="button" class="url-example" data-url="https://gemini.google.com/gem/<<your-gem-id>>">Gemini Gems</button>, <button type="button" class="url-example" data-url="https://claude.ai">Claude</button>, or <button type="button" class="url-example" data-url="https://claude.ai/project/<<your-project-id>>">Claude Project</button>)</span>
               </label>
               <input
                 type="url"
@@ -121,19 +121,10 @@
                 placeholder="https://chatgpt.com or https://gemini.google.com/app or https://claude.ai"
                 required
               />
-              <p class="url-fill-hint">Click links for provider at right to get started.</p>
               <!-- Info popup -->
               <div id="customGptUrlInfo" class="info-popup">
                 <div class="info-popup-content">
-                  <p>Select a provider to fill the URL field:</p>
-                  <ul class="url-example-list">
-                    <li><button type="button" class="url-example" data-url="https://chatgpt.com">ChatGPT</button></li>
-                    <li><button type="button" class="url-example" data-url="https://chatgpt.com/g/<<your-gpt-id>>">ChatGPT Custom</button></li>
-                    <li><button type="button" class="url-example" data-url="https://gemini.google.com/app">Gemini</button></li>
-                    <li><button type="button" class="url-example" data-url="https://gemini.google.com/gem/<<your-gem-id>>">Gemini Gems</button></li>
-                    <li><button type="button" class="url-example" data-url="https://claude.ai">Claude</button></li>
-                    <li><button type="button" class="url-example" data-url="https://claude.ai/project/<<your-project-id>>">Claude Project</button></li>
-                  </ul>
+                  <p>The URL of your AI assistant. Supports ChatGPT (chatgpt.com), ChatGPT custom GPTs (chatgpt.com/g/...), Gemini (gemini.google.com/app), Gemini Gems (gemini.google.com/gem/...), Claude (claude.ai), and Claude Projects (claude.ai/project/...).</p>
                   <button type="button" class="info-popup-close" aria-label="Close">×</button>
                 </div>
               </div>
