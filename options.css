@@ -675,13 +675,36 @@ h2 {
   white-space: nowrap;
 }
 
-.inline-hint a {
+.inline-hint a,
+.url-example {
   color: #1a73e8;
   text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
 }
 
-.inline-hint a:hover {
+.inline-hint a:hover,
+.url-example:hover {
   text-decoration: underline;
+}
+
+.url-fill-hint {
+  font-size: 11px;
+  color: #aaa;
+  margin: 4px 0 0 0;
+}
+
+.url-example-list {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0 0;
+}
+
+.url-example-list li {
+  margin: 4px 0;
 }
 
 .info-icon {

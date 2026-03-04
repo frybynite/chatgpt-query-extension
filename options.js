@@ -1598,6 +1598,22 @@ function attachEventListeners() {
     checkForChanges();
   });
 
+  // URL example links — fill field, select placeholder if present, close popup
+  document.querySelectorAll('.url-example').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = btn.dataset.url;
+      customGptUrlInput.value = url;
+      const openPopup = document.querySelector('.info-popup.show');
+      if (openPopup) closeInfoPopup(openPopup);
+      customGptUrlInput.focus();
+      const start = url.indexOf('<<');
+      const end = url.indexOf('>>') + 2;
+      if (start !== -1) customGptUrlInput.setSelectionRange(start, end);
+      checkForChanges();
+    });
+  });
+
   // Change detection for menu configuration fields
   customGptUrlInput.addEventListener('input', checkForChanges);
   autoSubmitCheckbox.addEventListener('change', checkForChanges);
