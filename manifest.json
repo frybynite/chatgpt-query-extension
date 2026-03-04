@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AI Custom Prompts",
   "version": "4.0.0",
-  "description": "Send selected text to ChatGPT, Gemini, Claude, or custom GPTs/Gems/Projects with configurable prompts and shortcuts.",
+  "description": "Send selected text to your favorite AI Agent (ChatGPT, Gemini, Claude, or custom GPTs/Gems/Projects) with configurable prompts and shortcuts.",
   "homepage_url": "https://github.com/frybynite/chatgpt-query-extension",
   "action": {
     "default_popup": "popup.html",
