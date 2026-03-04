@@ -950,6 +950,33 @@ h2 {
   cursor: default;
 }
 
+/* Quick Fill URL row — input stretches, dropdown sits to the right */
+.url-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.url-input-row input {
+  flex: 1;
+}
+
+.quick-fill-select {
+  flex-shrink: 0;
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.quick-fill-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Custom tooltip for shortcuts */
 .shortcut-tooltip {
   position: absolute;
