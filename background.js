@@ -471,18 +471,20 @@ async function runAllActions(selectionText, menu, config) {
   debugLog(`[Background] Run All for "${menu.name}": Found ${enabledActions.length} enabled actions:`, enabledActions.map(a => a.title));
 
   // Step 1: Create all tabs immediately IN ORDER, then wait for them to load IN PARALLEL
-  // Note: runAllActions uses menu.customGptUrl for all tabs. Per-action URL overrides
-  // (action.customGptUrl) are intentionally not applied here — run-all with mixed providers
-  // is a separate future feature.
+  // Per-action URL override: action.customGptUrl takes precedence over menu.customGptUrl,
+  // matching the same logic used by executeAction().
   const tabCreationPromises = enabledActions.map(async (action) => {
+    const effectiveUrl = (action.customGptUrl && action.customGptUrl.trim())
+      ? action.customGptUrl.trim()
+      : menu.customGptUrl;
     try {
       const tab = await chrome.tabs.create({
-        url: menu.customGptUrl,
+        url: effectiveUrl,
         active: false
       });
-      const tabId = await waitForTitleMatch(tab.id, getProviderForUrl(menu.customGptUrl).titleMatch, 20000);
+      const tabId = await waitForTitleMatch(tab.id, getProviderForUrl(effectiveUrl).titleMatch, 20000);
       debugLog(`[Background] Created tab ${tabId} for ${action.title}`);
-      return { action, tabId };
+      return { action, tabId, effectiveUrl };
     } catch (e) {
       console.warn(`[Background] Failed to create tab for ${action.title}:`, e);
       return null;
@@ -493,7 +495,7 @@ async function runAllActions(selectionText, menu, config) {
   const tabData = results.filter(r => r !== null);
 
   // Step 2: Inject prompts into all tabs IN PARALLEL
-  const promises = tabData.map(async ({ action, tabId }) => {
+  const promises = tabData.map(async ({ action, tabId, effectiveUrl }) => {
     const prompt = `${action.prompt} ${selectionText}`;
 
     try {
@@ -502,7 +504,7 @@ async function runAllActions(selectionText, menu, config) {
       const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
       // Attempt #1
-      const ok1 = await tryInjectWithTiming(tabId, prompt, menu.customGptUrl, {
+      const ok1 = await tryInjectWithTiming(tabId, prompt, effectiveUrl, {
         label: `runAll-${action.id}-attempt#1`,
         autoSubmit: menu.autoSubmit,
         reqId
@@ -510,7 +512,7 @@ async function runAllActions(selectionText, menu, config) {
 
       // Retry if needed
       if (!ok1) {
-        setTimeout(() => tryInjectWithTiming(tabId, prompt, menu.customGptUrl, {
+        setTimeout(() => tryInjectWithTiming(tabId, prompt, effectiveUrl, {
           label: `runAll-${action.id}-attempt#2`,
           autoSubmit: menu.autoSubmit,
           reqId
