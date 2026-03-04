@@ -397,7 +397,7 @@ function syncFormToConfig() {
       shortcut: extractRawShortcut(item.querySelector('.action-shortcut').value),
       enabled: item.querySelector('.action-enabled').checked,
       order: index + 1,
-      customGptUrl: item.querySelector('.action-custom-url-enabled')?.checked
+      customGptUrl: item.querySelector('.action-custom-url-enabled').checked
         ? (item.querySelector('.action-custom-url')?.value || '').trim()
         : ''
     });
@@ -427,7 +427,7 @@ function captureFormState() {
       prompt: item.querySelector('.action-prompt').value.trim(),
       shortcut: extractRawShortcut(item.querySelector('.action-shortcut').value),
       enabled: item.querySelector('.action-enabled').checked,
-      customGptUrl: item.querySelector('.action-custom-url-enabled')?.checked
+      customGptUrl: item.querySelector('.action-custom-url-enabled').checked
         ? (item.querySelector('.action-custom-url')?.value || '').trim()
         : ''
     });
@@ -1263,7 +1263,7 @@ async function handleSave() {
         shortcut: shortcut,
         enabled: enabled,
         order: index + 1,
-        customGptUrl: item.querySelector('.action-custom-url-enabled')?.checked
+        customGptUrl: item.querySelector('.action-custom-url-enabled').checked
           ? (item.querySelector('.action-custom-url')?.value || '').trim()
           : ''
       });
