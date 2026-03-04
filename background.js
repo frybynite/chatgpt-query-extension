@@ -455,6 +455,9 @@ async function runAllActions(selectionText, menu, config) {
   debugLog(`[Background] Run All for "${menu.name}": Found ${enabledActions.length} enabled actions:`, enabledActions.map(a => a.title));
 
   // Step 1: Create all tabs immediately IN ORDER, then wait for them to load IN PARALLEL
+  // Note: runAllActions uses menu.customGptUrl for all tabs. Per-action URL overrides
+  // (action.customGptUrl) are intentionally not applied here — run-all with mixed providers
+  // is a separate future feature.
   const tabCreationPromises = enabledActions.map(async (action) => {
     try {
       const tab = await chrome.tabs.create({
