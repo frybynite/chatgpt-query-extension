@@ -24,6 +24,7 @@ test.describe('Quick Fill Dropdown - Menu Level', () => {
   });
 
   test('QF-04: selecting ChatGPT fills the URL field', async ({ optionsPage }) => {
+    await optionsPage.locator('#customGptUrl').clear();
     await optionsPage.locator('#quickFillMenu').selectOption({ label: 'ChatGPT' });
     await expect(optionsPage.locator('#customGptUrl')).toHaveValue('https://chatgpt.com');
   });
@@ -38,14 +39,14 @@ test.describe('Quick Fill Dropdown - Menu Level', () => {
   });
 
   test('QF-06: all 6 provider options are present in the dropdown', async ({ optionsPage }) => {
-    const options = await optionsPage.locator('#quickFillMenu option').allTextContents();
-    expect(options.filter(o => o.trim() !== '')).toHaveLength(6);
-    expect(options).toContain('ChatGPT');
-    expect(options).toContain('ChatGPT Custom');
-    expect(options).toContain('Gemini');
-    expect(options).toContain('Gemini Gems');
-    expect(options).toContain('Claude');
-    expect(options).toContain('Claude Project');
+    const providerOptions = await optionsPage.locator('#quickFillMenu option:not([value=""])').allTextContents();
+    expect(providerOptions).toHaveLength(6);
+    expect(providerOptions).toContain('ChatGPT');
+    expect(providerOptions).toContain('ChatGPT Custom');
+    expect(providerOptions).toContain('Gemini');
+    expect(providerOptions).toContain('Gemini Gems');
+    expect(providerOptions).toContain('Claude');
+    expect(providerOptions).toContain('Claude Project');
   });
 
 });
