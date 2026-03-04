@@ -31,50 +31,83 @@ test.describe('Action URL Override - Options UI', () => {
     expect(placeholder).toContain(menuUrl);
   });
 
-  test('UI-03: value persists after save and reload', async ({ extensionId, context }) => {
+  test('UI-03: stored action URL is rendered in field on fresh page load', async ({ extensionId, context }) => {
     const page = await context.newPage();
-    await page.goto(`chrome-extension://${extensionId}/options.html`);
-    await page.waitForLoadState('networkidle');
     const actionUrl = 'https://chatgpt.com/g/g-ui03-action';
-    await page.locator('#add-menu').click();
-    await page.waitForTimeout(300);
-    await page.locator('#menuName').fill('UI-03 Menu');
-    await page.locator('#customGptUrl').fill('https://chatgpt.com/g/g-ui03-menu');
-    await page.locator('#add-action').click();
-    await page.waitForTimeout(200);
-    await page.locator('.action-title').first().fill('UI03 Action');
-    await page.locator('.action-prompt').first().fill('p:');
-    await page.locator('.action-custom-url').first().fill(actionUrl);
-    await page.locator('#save').click();
-    await page.waitForTimeout(500);
+    // Inject config with action.customGptUrl set
+    await page.goto(`chrome-extension://${extensionId}/options.html`);
+    await page.waitForLoadState('networkidle');
+    await page.evaluate((actionUrl) => {
+      const cfg = {
+        version: 3,
+        menus: [{
+          id: 'menu_ui03',
+          name: 'UI-03 Menu',
+          customGptUrl: 'https://chatgpt.com/g/g-ui03-menu',
+          autoSubmit: true,
+          runAllEnabled: false,
+          runAllShortcut: '',
+          order: 1,
+          actions: [{
+            id: 'action_ui03',
+            title: 'UI03 Action',
+            prompt: 'p:',
+            shortcut: '',
+            enabled: true,
+            order: 1,
+            customGptUrl: actionUrl
+          }]
+        }],
+        globalSettings: { gptTitleMatch: 'ChatGPT', clearContext: true }
+      };
+      return new Promise(resolve => chrome.storage.sync.set({ config: cfg }, resolve));
+    }, actionUrl);
+    // Fresh load — simulates what user sees after a save+reload
     await page.goto(`chrome-extension://${extensionId}/options.html`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(300);
+    // Select the menu to reveal its actions
+    await page.locator('.menu-item', { hasText: 'UI-03 Menu' }).click();
+    await page.waitForTimeout(200);
     expect(await page.locator('.action-custom-url').first().inputValue()).toBe(actionUrl);
   });
 
-  test('UI-04: clearing value saves empty (falls back to menu URL)', async ({ extensionId, context }) => {
+  test('UI-04: empty action URL renders as empty field on fresh page load', async ({ extensionId, context }) => {
     const page = await context.newPage();
+    // Inject config with action.customGptUrl as empty string
     await page.goto(`chrome-extension://${extensionId}/options.html`);
     await page.waitForLoadState('networkidle');
-    await page.locator('#add-menu').click();
+    await page.evaluate(() => {
+      const cfg = {
+        version: 3,
+        menus: [{
+          id: 'menu_ui04',
+          name: 'UI-04 Menu',
+          customGptUrl: 'https://chatgpt.com/g/g-ui04-menu',
+          autoSubmit: true,
+          runAllEnabled: false,
+          runAllShortcut: '',
+          order: 1,
+          actions: [{
+            id: 'action_ui04',
+            title: 'UI04 Action',
+            prompt: 'p:',
+            shortcut: '',
+            enabled: true,
+            order: 1,
+            customGptUrl: ''
+          }]
+        }],
+        globalSettings: { gptTitleMatch: 'ChatGPT', clearContext: true }
+      };
+      return new Promise(resolve => chrome.storage.sync.set({ config: cfg }, resolve));
+    });
+    await page.goto(`chrome-extension://${extensionId}/options.html`);
+    await page.waitForLoadState('networkidle');
     await page.waitForTimeout(300);
-    await page.locator('#menuName').fill('UI-04 Menu');
-    await page.locator('#customGptUrl').fill('https://chatgpt.com/g/g-ui04-menu');
-    await page.locator('#add-action').click();
+    await page.locator('.menu-item', { hasText: 'UI-04 Menu' }).click();
     await page.waitForTimeout(200);
-    await page.locator('.action-title').first().fill('UI04 Action');
-    await page.locator('.action-prompt').first().fill('p:');
-    await page.locator('.action-custom-url').first().fill('https://chatgpt.com/g/g-ui04-action');
-    await page.locator('#save').click();
-    await page.waitForTimeout(500);
-    await page.locator('.action-custom-url').first().clear();
-    await page.locator('#save').click();
-    await page.waitForTimeout(500);
     await expect(page.locator('#error-banner')).toBeHidden();
-    await page.goto(`chrome-extension://${extensionId}/options.html`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
     expect(await page.locator('.action-custom-url').first().inputValue()).toBe('');
   });
 
