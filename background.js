@@ -366,21 +366,25 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
 // ====== SINGLE ACTION EXECUTION (V3) ======
 async function executeAction(action, selectionText, menu, config) {
   const prompt = `${action.prompt} ${selectionText}`;
+  // Per-action URL override: action.customGptUrl takes precedence over menu.customGptUrl
+  const effectiveUrl = (action.customGptUrl && action.customGptUrl.trim())
+    ? action.customGptUrl.trim()
+    : menu.customGptUrl;
   debugLog('[Background] executeAction called for:', action.title);
   debugLog('[Background] Prompt:', prompt.substring(0, 100));
-  debugLog('[Background] Menu URL:', menu.customGptUrl);
+  debugLog('[Background] Effective URL:', effectiveUrl);
   debugLog('[Background] Auto-submit:', menu.autoSubmit);
 
   try {
     debugLog('[Background] Opening ChatGPT tab...');
-    const tabId = await openOrFocusGptTab(menu.customGptUrl, config.globalSettings.clearContext);
+    const tabId = await openOrFocusGptTab(effectiveUrl, config.globalSettings.clearContext);
     debugLog('[Background] Tab opened with ID:', tabId);
 
     const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     // Attempt #1
     debugLog('[Background] Attempting to inject prompt (attempt #1)...');
-    const ok1 = await tryInjectWithTiming(tabId, prompt, menu.customGptUrl, {
+    const ok1 = await tryInjectWithTiming(tabId, prompt, effectiveUrl, {
       label: `${action.id}-attempt#1`,
       autoSubmit: menu.autoSubmit,
       reqId
@@ -389,7 +393,7 @@ async function executeAction(action, selectionText, menu, config) {
 
     // Retry if needed
     if (!ok1) {
-      setTimeout(() => tryInjectWithTiming(tabId, prompt, menu.customGptUrl, {
+      setTimeout(() => tryInjectWithTiming(tabId, prompt, effectiveUrl, {
         label: `${action.id}-attempt#2`,
         autoSubmit: menu.autoSubmit,
         reqId
@@ -397,9 +401,9 @@ async function executeAction(action, selectionText, menu, config) {
     }
   } catch (e) {
     console.warn('[Background] Failed to execute action:', action.id, e);
-    const t = await chrome.tabs.create({ url: menu.customGptUrl, active: true });
+    const t = await chrome.tabs.create({ url: effectiveUrl, active: true });
     const reqId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setTimeout(() => tryInjectWithTiming(t.id, prompt, menu.customGptUrl, {
+    setTimeout(() => tryInjectWithTiming(t.id, prompt, effectiveUrl, {
       label: `${action.id}-fallback`,
       autoSubmit: menu.autoSubmit,
       reqId
