@@ -235,6 +235,20 @@
           <label>Prompt <span class="required">*</span></label>
           <textarea class="action-prompt" placeholder="Prompt to send to GPT..." rows="2"></textarea>
         </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" class="action-custom-url-enabled" />
+            <span>AI Assistant URL Override
+              <span class="inline-hint">(optional — overrides the menu URL for this action only)</span>
+            </span>
+          </label>
+          <input
+            type="url"
+            class="action-custom-url"
+            placeholder="Uses menu URL by default"
+            disabled
+          />
+        </div>
         <div class="form-group shortcut-group">
           <label>Keyboard Shortcut</label>
           <div class="shortcut-capture">

@@ -396,7 +396,10 @@ function syncFormToConfig() {
       prompt: item.querySelector('.action-prompt').value.trim(),
       shortcut: extractRawShortcut(item.querySelector('.action-shortcut').value),
       enabled: item.querySelector('.action-enabled').checked,
-      order: index + 1
+      order: index + 1,
+      customGptUrl: item.querySelector('.action-custom-url-enabled').checked
+        ? (item.querySelector('.action-custom-url')?.value || '').trim()
+        : ''
     });
   });
 }
@@ -423,7 +426,10 @@ function captureFormState() {
       title: item.querySelector('.action-title').value.trim(),
       prompt: item.querySelector('.action-prompt').value.trim(),
       shortcut: extractRawShortcut(item.querySelector('.action-shortcut').value),
-      enabled: item.querySelector('.action-enabled').checked
+      enabled: item.querySelector('.action-enabled').checked,
+      customGptUrl: item.querySelector('.action-custom-url-enabled').checked
+        ? (item.querySelector('.action-custom-url')?.value || '').trim()
+        : ''
     });
   });
 
@@ -454,6 +460,7 @@ function compareFormStates(state1, state2) {
     if (a1.prompt !== a2.prompt) return true;
     if (a1.shortcut !== a2.shortcut) return true;
     if (a1.enabled !== a2.enabled) return true;
+    if (a1.customGptUrl !== a2.customGptUrl) return true;
   }
 
   return false; // No differences
@@ -790,7 +797,19 @@ function createActionElement(action, index) {
   titleInput.value = action.title;
   promptInput.value = action.prompt;
   enabledCheckbox.checked = action.enabled;
-  
+
+  const customUrlCheckbox = actionItem.querySelector('.action-custom-url-enabled');
+  const customUrlInput = actionItem.querySelector('.action-custom-url');
+  customUrlCheckbox.checked = !!(action.customGptUrl);
+  customUrlInput.value = action.customGptUrl || '';
+  customUrlInput.disabled = !customUrlCheckbox.checked;
+  // Show the menu URL as placeholder — prefer the live form value over stored config
+  const menuUrlForPlaceholder = customGptUrlInput.value.trim() ||
+    currentConfig.menus.find(m => m.id === selectedMenuId)?.customGptUrl || '';
+  if (menuUrlForPlaceholder) {
+    customUrlInput.placeholder = `Default: ${menuUrlForPlaceholder}`;
+  }
+
   // Update shortcut display (this will also set up tooltip)
   updateShortcutDisplay(shortcutInput, action.shortcut || '');
 
@@ -842,6 +861,19 @@ function attachActionEventListeners(actionItem) {
   });
 
   enabledCheckbox.addEventListener('change', checkForChanges);
+  const customUrlCheckbox = actionItem.querySelector('.action-custom-url-enabled');
+  const customUrlInput = actionItem.querySelector('.action-custom-url');
+  customUrlCheckbox.addEventListener('change', () => {
+    if (customUrlCheckbox.checked) {
+      customUrlInput.disabled = false;
+      customUrlInput.focus();
+    } else {
+      customUrlInput.value = '';
+      customUrlInput.disabled = true;
+    }
+    checkForChanges();
+  });
+  customUrlInput.addEventListener('input', checkForChanges);
 
   // Drag and drop
   const dragHandle = actionItem.querySelector('.drag-handle');
@@ -910,7 +942,8 @@ function handleAddAction() {
     prompt: '',
     shortcut: '',
     enabled: true,
-    order: actionsListContainer.children.length + 1
+    order: actionsListContainer.children.length + 1,
+    customGptUrl: ''
   };
 
   const actionElement = createActionElement(newAction, actionsListContainer.children.length);
@@ -1229,7 +1262,10 @@ async function handleSave() {
         prompt: prompt,
         shortcut: shortcut,
         enabled: enabled,
-        order: index + 1
+        order: index + 1,
+        customGptUrl: item.querySelector('.action-custom-url-enabled').checked
+          ? (item.querySelector('.action-custom-url')?.value || '').trim()
+          : ''
       });
     });
 
