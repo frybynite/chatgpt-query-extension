@@ -250,15 +250,26 @@
           <label>
             <input type="checkbox" class="action-custom-url-enabled" />
             <span>AI Assistant URL Override
-              <span class="inline-hint">(optional — overrides the menu URL for this action only)</span>
+              <span class="inline-hint">(for this action only)</span>
             </span>
           </label>
-          <input
-            type="url"
-            class="action-custom-url"
-            placeholder="Uses menu URL by default"
-            disabled
-          />
+          <div class="url-input-row">
+            <input
+              type="url"
+              class="action-custom-url"
+              placeholder="Uses menu URL by default"
+              disabled
+            />
+            <select class="quick-fill-select action-quick-fill" aria-label="Quick fill URL" disabled>
+              <option value="" disabled selected>— Quick Fill —</option>
+              <option value="https://chatgpt.com">ChatGPT</option>
+              <option value="https://chatgpt.com/g/<<your-gpt-id>>">ChatGPT Custom</option>
+              <option value="https://gemini.google.com/app">Gemini</option>
+              <option value="https://gemini.google.com/gem/<<your-gem-id>>">Gemini Gems</option>
+              <option value="https://claude.ai">Claude</option>
+              <option value="https://claude.ai/project/<<your-project-id>>">Claude Project</option>
+            </select>
+          </div>
         </div>
         <div class="form-group shortcut-group">
           <label>Keyboard Shortcut</label>
