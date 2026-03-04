@@ -254,9 +254,9 @@ function validateV3Config(config) {
     }
 
     // Custom GPT URL validation
-    const ALLOWED_MENU_URL_PREFIXES = ['https://chatgpt.com', 'https://gemini.google.com'];
+    const ALLOWED_MENU_URL_PREFIXES = ['https://chatgpt.com', 'https://gemini.google.com', 'https://claude.ai'];
     if (!ALLOWED_MENU_URL_PREFIXES.some(prefix => menu.customGptUrl?.startsWith(prefix))) {
-      errors.push(`${menuLabel}: Custom GPT URL must start with https://chatgpt.com or https://gemini.google.com`);
+      errors.push(`${menuLabel}: Custom GPT URL must start with https://chatgpt.com, https://gemini.google.com, or https://claude.ai`);
     }
 
     // Boolean validations

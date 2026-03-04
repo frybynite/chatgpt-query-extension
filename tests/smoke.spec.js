@@ -23,7 +23,7 @@ test.describe('Smoke Tests', () => {
 
     // Verify page title
     const title = await optionsPage.title();
-    expect(title).toContain('ChatGPT');
+    expect(title).toContain('AI Custom Prompts');
 
     // Verify basic page structure exists
     const mainContainer = optionsPage.locator('.container');

@@ -59,6 +59,22 @@ const PROVIDERS = {
       "button[aria-label*='send' i]",
       "button[type='submit']"
     ]
+  },
+  'claude.ai': {
+    titleMatch: 'Claude',
+    // Claude.ai uses a ProseMirror contenteditable editor
+    inputSelectors: [
+      "div[contenteditable='true'][data-placeholder]",
+      "div.ProseMirror[contenteditable='true']",
+      "div[contenteditable='true'][role='textbox']",
+      "[contenteditable='true'][role='textbox']",
+      "[contenteditable='true']"
+    ],
+    sendButtonSelectors: [
+      "button[aria-label='Send Message']",
+      "button[aria-label*='send' i]",
+      "button[type='submit']"
+    ]
   }
 };
 
