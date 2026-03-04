@@ -794,8 +794,11 @@ function createActionElement(action, index) {
   promptInput.value = action.prompt;
   enabledCheckbox.checked = action.enabled;
 
+  const customUrlCheckbox = actionItem.querySelector('.action-custom-url-enabled');
   const customUrlInput = actionItem.querySelector('.action-custom-url');
+  customUrlCheckbox.checked = !!(action.customGptUrl);
   customUrlInput.value = action.customGptUrl || '';
+  customUrlInput.disabled = !customUrlCheckbox.checked;
   // Show the menu URL as placeholder — prefer the live form value over stored config
   const menuUrlForPlaceholder = customGptUrlInput.value.trim() ||
     currentConfig.menus.find(m => m.id === selectedMenuId)?.customGptUrl || '';
@@ -854,7 +857,19 @@ function attachActionEventListeners(actionItem) {
   });
 
   enabledCheckbox.addEventListener('change', checkForChanges);
-  actionItem.querySelector('.action-custom-url').addEventListener('input', checkForChanges);
+  const customUrlCheckbox = actionItem.querySelector('.action-custom-url-enabled');
+  const customUrlInput = actionItem.querySelector('.action-custom-url');
+  customUrlCheckbox.addEventListener('change', () => {
+    if (customUrlCheckbox.checked) {
+      customUrlInput.disabled = false;
+      customUrlInput.focus();
+    } else {
+      customUrlInput.value = '';
+      customUrlInput.disabled = true;
+    }
+    checkForChanges();
+  });
+  customUrlInput.addEventListener('input', checkForChanges);
 
   // Drag and drop
   const dragHandle = actionItem.querySelector('.drag-handle');
