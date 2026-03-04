@@ -803,6 +803,8 @@ function createActionElement(action, index) {
   customUrlCheckbox.checked = !!(action.customGptUrl);
   customUrlInput.value = action.customGptUrl || '';
   customUrlInput.disabled = !customUrlCheckbox.checked;
+  const quickFill = actionItem.querySelector('.action-quick-fill');
+  quickFill.disabled = !customUrlCheckbox.checked;
   // Show the menu URL as placeholder — prefer the live form value over stored config
   const menuUrlForPlaceholder = customGptUrlInput.value.trim() ||
     currentConfig.menus.find(m => m.id === selectedMenuId)?.customGptUrl || '';
@@ -863,17 +865,31 @@ function attachActionEventListeners(actionItem) {
   enabledCheckbox.addEventListener('change', checkForChanges);
   const customUrlCheckbox = actionItem.querySelector('.action-custom-url-enabled');
   const customUrlInput = actionItem.querySelector('.action-custom-url');
+  const quickFill = actionItem.querySelector('.action-quick-fill');
   customUrlCheckbox.addEventListener('change', () => {
     if (customUrlCheckbox.checked) {
       customUrlInput.disabled = false;
+      quickFill.disabled = false;
       customUrlInput.focus();
     } else {
       customUrlInput.value = '';
       customUrlInput.disabled = true;
+      quickFill.disabled = true;
     }
     checkForChanges();
   });
   customUrlInput.addEventListener('input', checkForChanges);
+  quickFill.addEventListener('change', (e) => {
+    const url = e.target.value;
+    if (!url) return;
+    customUrlInput.value = url;
+    e.target.value = '';
+    customUrlInput.focus();
+    const start = url.indexOf('<<');
+    const end = url.indexOf('>>') + 2;
+    if (start !== -1) customUrlInput.setSelectionRange(start, end);
+    checkForChanges();
+  });
 
   // Drag and drop
   const dragHandle = actionItem.querySelector('.drag-handle');
